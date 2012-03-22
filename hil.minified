@@ -1,0 +1,11 @@
+
+# This is intended to be cut-n-pasted into a bash script (eg.  your ~/.bash_aliases)
+# or at the command line.
+
+# There is no tool (AFAIK) to minify Perl scripts, so the minification has been done manually.
+# Ideally, I would have created a test suite that would prove the equivalency
+# of the uncompressed version and the minified version, but no test cases have been created yet.
+
+
+function hil { perl -0777pe'BEGIN{$p=join"|",map{"($_)"}grep{++$i%2}@ARGV;@c=grep{$j++%2}@ARGV;@ARGV=()}s/$p/for($i=0;$i<@c&&!defined$-[$i+1];$i++){}"\e[$c[$i]m$+\e[0m"/gome' "$@"; }
+

@@ -1,0 +1,71 @@
+#!/bin/bash
+    # vim: set syntax=perl:
+
+########################################################
+##  This is the non-minified version of hil.minified  ##
+########################################################
+
+    # It's not possible to pass multiple arguments to perl on the she-bang line, so use a minimal
+    # wrapper along with 'perl -x' to accomplish that.
+#exec perl -c -x $0          # uncomment this to syntax-check the below script
+exec perl -0777 -px $0 "$@"
+exit
+
+
+#!/usr/bin/perl
+#line 17
+
+    use strict;
+    use warnings;
+
+our $all_patterns;
+our @colors;
+
+BEGIN{
+    # Process the command-line arguments.
+    # Every other argument goes into @all_patterns, and the other ones go into @colors.
+    my ($i, $j) = (0, 0);       # counters to keep track of alternation
+    my @all_patterns = grep{++$i % 2} @ARGV;
+    # Combine all regexps into one.
+    #
+    #       (combining is required, so that we can easily find whichever regexp that matches EARLIEST in the string
+    #         -- we can't match one regexp near the end of the string, and then
+    #            go back to an earlier part of the string to match another
+    #            regexp, because we're marching monotonically through the
+    #            string)
+    #
+    #       (we're marching monotonically through the string, so that we make
+    #           sure the modified part of the string is always to the left, and the
+    #           part still to be matched is to the right, so that we never try
+    #           to match regexps against the modified part of the string,
+    #           because matching against just-placed ANSI codes results in a
+    #           mess of nested ANSI codes that don't work)
+    $all_patterns = join("|",
+                        map {"($_)"}        # the parens allow us to later detect which pattern matched, via the capture-group number -- see find_capture_group()
+                        @all_patterns);
+    @colors = grep {$j++ % 2} @ARGV;
+
+    # we have to clear @ARGV, otherwise the while (<>) {...}  logic of  perl -pe   will 
+    @ARGV = ();
+}
+
+
+
+# This line, combined with   perl -0777 -pe,  is the meat of the script.
+#
+#           -p          means before this script, Perl reads in STDIN to $_,  and after this script, Perl prints out the value $_   (which we've presumably changed)
+#           -0777       means Perl slurps in ALL data from STDIN, and we process it all at once, as one giant string  (instaed of line-by-line)
+#
+$_ =~ s/$all_patterns/ &find_capture_group /gome;
+
+
+
+# Gets called several times from inside the substitution above.
+#
+# This looks through @- to find out which capture-group matched, and then returns the ANSI color code associated with that regexp.
+sub find_capture_group {
+    my $capture;      # the number of the capture-group that matched  (eg. $1, $2, $3, etc)
+    for ($capture=0;  $capture<@colors && !defined($-[$capture+1]);  $capture++)
+        {}
+    return "\e[" . $colors[$capture]. "m$+\e[0m";
+}
