@@ -1,14 +1,14 @@
 # hil #
 
-hil is a command-line utility that adds ANSI color hilighting to text.
+<tt>hil</tt> is a command-line utility that adds ANSI color hilighting to text.
 
 ## Arguments ##
 
-Hil reads text from stdin, adds ANSI codes, and spits the modified text out on stdout.  Example:
+<tt>hil</tt> reads text from stdin, adds ANSI codes, and sends the modified text to stdout.  Example:
 
     cat file | hil .... | less -R
 
-The arguments to hil are in pairs:
+The arguments to <tt>hil</tt> are in pairs:
 
 * First of pair -- A regular expression that matches text you want to hilight.
 * Second of pair -- The ANSI color(s) you want to hilight that text in.
