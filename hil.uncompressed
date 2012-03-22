@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
     # vim: set syntax=perl:
 
 ########################################################
@@ -7,8 +7,8 @@
 
     # It's not possible to pass multiple arguments to perl on the she-bang line, so use a minimal
     # wrapper along with 'perl -x' to accomplish that.
-#exec perl -c -x $0          # uncomment this to syntax-check the below script
-exec perl -0777 -px $0 "$@"
+#exec perl -c -x "$0"               # uncomment this to syntax-check the below script
+exec perl -0777 -px "$0" "$@"
 exit
 
 
