@@ -39,7 +39,7 @@ BEGIN{
                         @all_patterns);
     @colors = grep {$j++ % 2} @ARGV;
 
-    # we have to clear @ARGV, otherwise the while (<>) {...}  logic of  perl -pe   will 
+    # we have to clear @ARGV, otherwise the while (<>) {...}  logic of  perl -p   will try to process them as filenames
     @ARGV = ();
 }
 
