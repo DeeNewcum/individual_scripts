@@ -50,13 +50,15 @@
 
 
     # the location of your CPAN::Mini mirror
-    my $mirror_location = '/cpan_mirror/mirror/authors/';
+    my $mirror_location = 'mirror/authors/';
     my $log_location = 'logs/';
 
 
 my $eval_pattern = shift or die "Please specify a Perl snippet of regexp(es), for matching files.\n\nFor example:\n\t$0 '/matches_somethign/ && /matches_something_else/'\n";
 
 -d $mirror_location or die "\$mirror_location is set incorrectly ($mirror_location)\n";
+
+system "mkdir", "-p", $log_location;
 
 $Archive::Tar::WARN = 0;        # quiet warning messages
 
@@ -114,6 +116,7 @@ sub search_archive {
         {
             local $_ = $contents;
             $is_match = eval $eval_pattern;
+            $@ and die "Error in Perl snippet:   $eval_pattern\n\t$@\n";
         }
         #if ($contents =~ /$pattern/o) {
         if ($is_match) {
