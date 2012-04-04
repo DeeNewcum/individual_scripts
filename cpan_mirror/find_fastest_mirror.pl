@@ -17,6 +17,7 @@
     #use LWP::Simple qw[];
     use LWP::UserAgent;
     use Time::HiRes;
+    use File::Temp;
 
     use CPAN;
     use CPAN::Mirrors;
@@ -30,20 +31,30 @@ our $ua = LWP::UserAgent->new;
 $ua->env_proxy();
 $ua->timeout(5);
 
+print "\t\tTo download a CPAN mirror:\n";
+print "\t\t  cpanm CPAN::Mini\n\n";
+print "\t\t  minicpan -r <remoteURL> -l .\n\n";
+
+
 find_fastest_mirror();
 
 
 
 sub find_fastest_mirror {
     ## load ~/.cpan/CPAN/MyConfig.pm or .../CPAN/Config.pm
-    do CPAN::HandleConfig->require_myconfig_or_config();
-    my $mirrored_by = File::Spec->catfile($CPAN::Config->{keep_source_where}, 'MIRRORED.BY');
+    #do CPAN::HandleConfig->require_myconfig_or_config();
+    #my $mirrored_by = File::Spec->catfile($CPAN::Config->{keep_source_where}, 'MIRRORED.BY');
+    ### load the MIRRORED.BY file
+    #if (!-f $mirrored_by) {
+    #    #print "looking in  $mirrored_by\n";
+    #    die "MIRRORED.BY file wasn't found.  Please run:\n\techo o conf init urllist | cpan\nor just initialize CPAN for the first time, if you haven't.\n";
+    #}
 
-    ## load the MIRRORED.BY file
-    if (!-f $mirrored_by) {
-        #print "looking in  $mirrored_by\n";
-        die "MIRRORED.BY file wasn't found.  Please run:\n\techo o conf init urllist | cpan\nor just initialize CPAN for the first time, if you haven't.\n";
-    }
+    my ($fh, $mirrored_by) = File::Temp::tempfile();
+    close $fh;
+    utime(1, 1, $mirrored_by);
+    $ua->mirror("http://www.cpan.org/MIRRORED.BY", $mirrored_by);
+
     my $mirrors = CPAN::Mirrors->new($mirrored_by);
     #print Dumper $mirrors; exit;
 
@@ -71,7 +82,7 @@ sub find_fastest_mirror {
                         #print "$url  ==>  ", int($kbps), "\n";
                         my $cmp = (@top_speeds >= $topN) ? int($top_speeds[-$topN]) : '<>';
                         print "\r\e[K";
-                        print "$url  ==>  ", int($kbps), "\n";          # , "        (comparing to $cmp)\n";
+                        print "$url  ==>  ", int($kbps), " kbps\n";          # , "        (comparing to $cmp)\n";
                     } else {
                         print ".";
                     }
