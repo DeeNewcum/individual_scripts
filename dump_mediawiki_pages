@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+# Dumps all pages from a MediaWiki wiki, in wikitext, creating one text file per page.
+#
+# This extracts data from a database, and so can be used after the webserver application has
+# stopped working (presuming the database is on a different server).
+
+    use strict;
+    use warnings;
+
+    use DBIx::Simple;
+    #use Data::Dumper;
+
+
+my $db = DBIx::Simple->connect('DBI:mysql:mediawiki', 'username', 'password')
+    or die;
+
+
+foreach my $page ($db->iquery(<<'EOF')->hashes) {
+    SELECT page_title, old_text
+      FROM mediawiki.page
+           LEFT JOIN mediawiki.revision ON page_latest=rev_id
+           LEFT JOIN mediawiki.text ON rev_text_id=old_id
+     WHERE page_namespace=0;
+EOF
+    open my $fout, '>', $page->{page_title}     or die $!;
+    print $fout $page->{old_text};
+    close $fout;
+}
