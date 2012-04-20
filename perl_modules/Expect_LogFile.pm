@@ -7,7 +7,7 @@ Expect::LogFile - add ability to send Expect.pm debug logs to a file
 
 =head1 SYNOPSIS
 
-  use Expect::LogFile;      # MUST be loaded before Expect.pm is
+  use Expect::LogFile;      # MUST be loaded before Expect.pm
   use Expect;
 
   Expect::LogFile::logto("/tmp/somefilename");
@@ -16,9 +16,14 @@ Expect::LogFile - add ability to send Expect.pm debug logs to a file
 
 =head1 DESCRIPTION
 
-Expect.pm normally outputs its debug logs with a combination of STDERR and cluck().  This adds the
-ability to redirect those to a file, without redirecting STDERR and hiding other STDERR
-warnings/errors you might be interested in showing to the user.
+Expect.pm has built-in debug logging:
+
+  $Expect::Exp_Internal = 1;
+  # or
+  $Expect::Debug = 3;
+
+However, it sends its debug logs to STDERR and cluck().  This module adds the ability to
+redirect the debug logs to a file instead.
 
 Unfortunately, it's not possible to log messages from only one $exp object -- parts of Expect.pm
 operate across multiple Expect objects at once.  As such, ALL log messages generated are sent to the
@@ -90,6 +95,7 @@ sub modify_file {
 sub logto {
     my ($filename) = @_;
     open $log_filehandle, '>>', $filename   or die $!;
+    $log_filehandle->autoflush(1);
 }
 
 
