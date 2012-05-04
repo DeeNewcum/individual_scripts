@@ -2,17 +2,19 @@
 # it's run from a normal browser.
 #
 # You can then "replay" that data against the same script, this time from the
-# command line.  This allows you to see any error messages.   It also lets you
-# see the output generated in real-time, so you can see timing of specific parts
-# of the page.
+# command line.  This allows you to:
 #
-# Or, you can apply the replay to an alternate (development) copy of the
-# original script, which can allow you to debug problems.
+#   - see any error messages
+#   - see the exact timing of STDOUT/STDERR, in case that makes a difference
+#   - use a debugger on the script
+#
+# This tool also lets you to use the original captured data against another script.
+# This is useful if you want to test if a bugfix works.
 
 
 
 # To capture some data, put this at the very top of your CGI script:
-#       BEGIN {$^C or do "/home/myself/public_html/cgi-bin/replay/capture_CGI_input.pm"}
+#       BEGIN {$^C or do "/somedir/cgi-bin/replay/capture_CGI_input.pm"}
 # and then run your script via the web.  The captured data will be dropped in
 # the same directory as this script.
 #
