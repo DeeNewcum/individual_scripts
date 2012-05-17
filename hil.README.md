@@ -10,12 +10,16 @@
 
 The arguments to <tt>hil</tt> are in pairs:
 
-* First of pair -- A regular expression that matches text you want to hilight.
-* Second of pair -- The ANSI color(s) you want to hilight that text in.
+* First of pair — A regular expression that matches text you want to hilight.
+* Second of pair — The ANSI color(s) you want to hilight that text in.
 
-Note that *order matters*, with earlier patterns getting higher precedence.  Once a section of text has been hilighted, that text will no longer be used for other matches.
+See examples below.
 
-For example, using <tt>'.*' 0</tt> as the first pattern will prevent any trailing patterns from matching.
+## Argument order ##
+
+Note that *order matters*, with leftmost patterns getting higher precedence.  Once a piece of text has been hilighted, that text can no longer be hilighted by other patterns.
+
+For example, using <tt>'.*' 0</tt> as a pattern will prevent all later patterns from matching.
 
 ## ANSI colors ##
 
@@ -47,7 +51,7 @@ You can use more than one attribute by combining them with semicolons.  Example:
 
 ## Regular expressions ##
 
-Use Perl's regular expression syntax.
+Use [Perl's regular expression syntax](http://perldoc.perl.org/perlre.html).
 
 To match case-insensitively, add <tt>(?i)</tt> to a pattern.
 
@@ -55,6 +59,10 @@ To match across newlines, add <tt>(?s)</tt> to a pattern.
 
 ## Examples ##
 
-    cat /etc/passwd | hil   ':' 96    '[^:]+$' 91
+    cat /etc/passwd | hil   ':' 96    '[^:]+$' '44;97'
+
+Hilight the field-separators in cyan, and hilight the shell field with a white foreground and blue background.
 
     diff -U 9999999 file1 file2 | hil    '^\+.*' 92    '^-.*' 91
+
+Show the changes to a file, with the added lines hilighted in green and the deleted lines in red.
