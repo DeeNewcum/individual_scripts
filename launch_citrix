@@ -1,0 +1,346 @@
+#!/usr/bin/perl
+
+# Start an application on Citrix's "Web Interface for XenApp".
+#
+# It was a PITA to log in to the website manually every time, so I automated it.
+
+    use strict;
+    use warnings;
+
+    use WWW::Mechanize;
+    use CGI::Cookie;
+    use File::Temp;
+    use POSIX;
+    use CGI::Util;
+
+    use Carp::Always;
+    use Data::Dumper;
+    #use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
+
+    my $DEBUG = 0;      # set to '1' to enable verbose debugging output
+
+
+
+my ($citrix_username, $citrix_password, $xenapp_url);
+
+# a config file, in Perl format.  It is expected to set these variables:
+#           $citrix_username            # string
+#           $citrix_password            # string
+#           $xenapp_url                 # string
+eval slurp("$ENV{HOME}/.citrixrc");
+
+
+# When you go to the 'Preferences' menu on the website, it stores the setting in a cookie named 'WIUser'.  Copy that cookie here, if you want those settings to apply.
+# Make this as a blank string if you don't want to use it.
+my %preferences = (
+    CTX_ForcedClient   => 'Off',
+    CTX_LaunchMethod   => 'Ica-Local',
+    CTX_WindowSeamless => 'Off',
+    CTX_AuthMethod     => 'Explicit',
+    CTX_WindowType     => 'pixels',
+    CTX_ViewStyle      => '{Applications=Tree}',
+    CTX_WindowWidth    => 1280,
+    CTX_WindowHeight   => 1024,
+);
+if (`xwininfo -root` =~ /-geometry\s+(\d+)x(\d+)/) {
+#    $preferences{CTX_WindowWidth} = ($1 > 1920) ? 1920 : $1;
+#    $preferences{CTX_WindowHeight} = $2 - 56;       # "56" is the amount of space we assume the top and bottom bars take
+}
+my $preferences = join("~", map {"$_#" . CGI::Util::escape($preferences{$_})} keys %preferences);
+#print $preferences; exit;
+
+
+
+
+
+if (@ARGV > 1) {
+    die "Error: You need to enclose the application name in quotes.\n";
+}
+my $app_to_launch = shift @ARGV;
+
+
+
+our $session_token;
+
+
+chomp $citrix_password;     # in case it has newlines on it, from being read from a file
+my $mech = Citrix_login();
+my @apps = Citrix_get_app_list($mech);
+
+if(!$app_to_launch) {
+    print "Specify an application to launch.  Apps available under your profile are:\n";
+    foreach my $app (@apps) {
+        print "\t$app->[0]\n";
+    }
+    exit;
+} else {
+    my %apps = map {@$_} @apps;
+    my $app_url = $apps{$app_to_launch}
+        or die "App '$app_to_launch' not found.\n";
+    my $ica_file = Citrix_create_ica_launch_file($mech, $app_url);
+    #do_ica_override($ica_file, $ICA_override);
+    print "Launching    $app_to_launch...\n";
+    $|++;
+    #system "cat", $ica_file; exit;
+    daemonize();        # on linux, it keeps the command-line hanging
+    exec '/opt/Citrix/ICAClient/wfica', '-file', $ica_file;
+}
+
+
+
+
+
+sub Citrix_login {
+    $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;     # our website uses an in-house certificate...   ignore the fact that it doesn't validate
+
+    my $mech = WWW::Mechanize->new();
+    #$mech->agent_alias('Windows IE 6');
+    $mech->agent_alias('Windows Mozilla');
+
+    get_dump($mech, $xenapp_url);
+    get_dump($mech, "$xenapp_url/loading.htm");
+    get_dump($mech, "$xenapp_url/auth/silentDetection.aspx");
+
+    # this cookie would normally be set by the Javascript in
+    #       https://hostname/Citrix/XenApp/auth/silentDetection.aspx
+    set_cookie_raw($mech,
+            'WIClientInfo="Cookies_On#true~icaScreenResolution#1920x1080~clientConnSecure#true"');
+            
+    if ($preferences) {
+        set_cookie_raw($mech,
+                'WIUser="' . $preferences . '"')
+    }
+
+    get_dump($mech, "$xenapp_url/auth/silentDetection.aspx");
+
+    ($session_token) = ($mech->content =~ /SESSION_TOKEN" value="(.*?)"/s);
+    print "session_token = $session_token\n"        if ($DEBUG);
+
+    post_dump($mech, "$xenapp_url/auth/clientDetectionOutputs.aspx", {
+                SESSION_TOKEN   => $session_token,
+                RemoteClient    => 'Ica-Local=Auto',
+                StreamingClient => '',
+                IcoStatus       => 'IsNotPassthrough',
+            });
+
+    get_dump($mech, "$xenapp_url/auth/login.aspx");
+
+    $mech->submit_form(
+        fields      => {
+            user        => $citrix_username,
+            password    => $citrix_password,
+        }
+    );
+    dump_last_response($mech);
+
+    return $mech;
+}
+
+
+# get the list of apps that are available to launch
+sub Citrix_get_app_list {
+    my $mech = shift;
+
+    get_dump($mech, "$xenapp_url/site/default.aspx?CTX_CurrentViewStyle=Tree");
+
+    # NOTE: the 'LaunchId' parameter that's passed to:
+    #           https://website/Citrix/XenApp/site/launcher.aspx
+    #           https://website/Citrix/XenApp/site/launcher.ica
+    # is just the number of milliseconds since Jan 1, 1970
+
+    my @links;
+    my $parent_folder = '';
+    foreach my $link ($mech->links()) {
+        #print Dumper $link; next;
+        #print "...\n";
+        if ($link->attrs->{class} && $link->attrs->{class} eq 'folderClose') {
+            $parent_folder = $link->attrs->{title};
+        }
+        if ($link->url =~ /^launcher\.aspx/) {
+            push(@links, [
+                "$parent_folder > " . $link->attrs->{title},
+                $link->url_abs->as_string]);
+        }
+    }
+    return @links;
+}
+
+
+# Launch the specified application.
+#
+# Well, at least, download .ica file for the specified application
+# Returns the filename after it's been created.
+sub Citrix_create_ica_launch_file {
+    my ($mech, $app_url) = @_;
+
+    # We could do the javascript redirect that launcher.aspx returns....
+    #
+    # Or we could just take a shortcut and rewrite the URL to get the launch.ica URL.
+    $app_url =~ s/launcher\.aspx\?/launch.ica\?/;
+
+    get_dump($mech, $app_url);
+
+    # write the .ica file out
+    my ($ica_fh, $ica_filename) = File::Temp::tempfile(SUFFIX => '.ica');
+    print $ica_fh $mech->content;
+    close $ica_fh;
+
+    return $ica_filename;
+}
+
+
+
+sub daemonize {
+    exit if fork();
+    POSIX::setsid();
+    open STDIN, "<", "/dev/null";
+    open STDOUT, "+>", "/dev/null";
+    #open STDERR, "+>", "/dev/null";
+    exit if fork();
+}
+
+
+
+# Add a cookie to the cookie_jar, using the context of the last response ($mech->response()).
+#
+# The arguments are exactly that of CGI::Cookie->new(), they're passed directly through.
+sub set_cookie {
+    my $mech = shift;
+    my @cookie_new = @_;
+
+    my $cookie = CGI::Cookie->new(@cookie_new);
+    # pretend as if this cookie-header had come in on the last response
+    $mech->response()->headers()->push_header('Set-Cookie' => $cookie->as_string);
+    # pull in that new header
+    $mech->cookie_jar()->extract_cookies( $mech->response() );
+}
+
+
+# Add a cookie to the cookie_jar, using the context of the last response ($mech->response()).
+#
+# The argument is the string used as a Set-Cookie: response header.  For examples, see:
+#       http://en.wikipedia.org/wiki/HTTP_cookie#Setting_a_cookie
+sub set_cookie_raw {
+    my $mech = shift;
+    my $set_cookie__text_string = shift;
+
+    # pretend as if this cookie-header had come in on the last response
+    $mech->response()->headers()->push_header('Set-Cookie' => $set_cookie__text_string);
+
+    # pull in that new header
+    $mech->cookie_jar()->extract_cookies( $mech->response() );
+}
+
+
+
+sub dump_last_response {
+    my ($mech) = shift;
+    my ($res) = shift || $mech->res;
+
+    if (!$mech->success) {
+        die "Failed!\n";
+    }
+
+    return unless ($DEBUG);
+
+    print "\n", "-"x80, "\n";
+    foreach my $req ($res->redirects, $res) {
+        print $req->request->method, " ", $req->request->uri, "\n";
+    }
+    print "\n";
+    print "## Success?    ", $res->is_success() ? "1" : "0", "\n";
+    print $mech->cookie_jar()->as_string, "\n\n";
+    if ($res->is_success()) {
+        print "\n";
+        print $res->decoded_content;
+        print "\n";
+
+        print "======= Links ========\n";
+        foreach my $link ($mech->links()) {
+            print $link->url, "\n";
+            print $link->url_abs, "\n";
+            print "\t", $link->text, "\n";
+        }
+
+        # request headers
+        #print $response->request->as_string;
+
+        # response headers
+        #print "-"x80, "\n";
+        #print $response->headers->as_string;
+    }
+}
+
+sub get_dump {
+    my $mech = shift;
+    $mech->get(@_);
+    dump_last_response($mech);
+}
+
+sub post_dump {
+    my $mech = shift;
+    $mech->post(@_);
+    dump_last_response($mech);
+
+}
+
+
+# quickly read a whole file
+sub slurp {my$p=open(my$f,"$_[0]")or die$!;my@o=<$f>;close$f;waitpid($p,0);wantarray?@o:join("",@o)}
+
+
+
+
+__END__
+
+# settings that will override the settings normally found in the .ica
+my $ICA_override = <<'EOF';
+[WFClient]
+TransparentKeyPassthrough=FullScreenOnly
+
+[Application]
+DesiredHRES=1280
+DesiredVRES=1000
+EOF
+
+
+
+    do_ica_override($ica_file, $ICA_override);
+
+
+
+sub do_ica_override {
+    my ($ica_file, $ICA_override) = @_;
+
+    return unless ($ICA_override =~ /\S/);
+    #eval 'use Config::INI::Reader;  use Config::INI::Writer;';
+    eval 'use Config::Tiny;';
+    if ($@) {
+        die "If you want to use the \$ICA_override feature, you must install Config::Tiny\n";
+    }
+
+    #my $ica = Config::INI::Reader->read_file($ica_file);
+    #my $override = Config::INI::Reader->read_string($ICA_override);
+
+    my $ica = Config::Tiny->read($ica_file);
+    my $override = Config::Tiny->read_string($ICA_override);
+
+    my ($application_name) = keys(%{$ica->{ApplicationServers}});
+    # the [Application] section name is an alias -- the actual section name depends on which application is launched.  Here, we rename it.
+    if (exists $override->{Application}) {
+        $override->{$application_name} = delete $override->{Application};
+    }
+
+    while (my ($section, $sect_contents) = each %$override) {
+        while (my ($key, $val) = each %$sect_contents) {
+            $ica->{$section}{$key} = $val;
+        }
+    }
+
+    #print Dumper $ica; exit;
+
+    #Config::INI::Writer->write_file($ica, $ica_file);
+    $ica->write($ica_file);
+}
+
+
