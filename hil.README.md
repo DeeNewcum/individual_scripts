@@ -53,6 +53,8 @@ You can use more than one attribute by combining them with semicolons.  Example:
 
 Use [Perl's regular expression syntax](http://perldoc.perl.org/perlre.html).
 
+Note that capturing parentheses can *not* be used (they will break hil's internals); use non-capturing parens instead (ie. <tt>(?:...)</tt> ).
+
 To match case-insensitively, add <tt>(?i)</tt> to a pattern.
 
 To match across newlines, add <tt>(?s)</tt> to a pattern.
