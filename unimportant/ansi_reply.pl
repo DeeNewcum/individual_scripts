@@ -14,7 +14,10 @@
     use constant TIMEOUT => 1.0;        # total seconds to wait for a reply
 
 
-@ARGV or die "$0 <query> [<response_end_character>]\n";
+@ARGV or die "$0 [-r] <query> [<response_end_character>]\n";
+
+my $cmdline_raw = 0;      # print the reply, and nothing else   (useful within a shell script)
+$cmdline_raw = shift @ARGV    if ($ARGV[0] eq '-r');
 
 my ($query, $response_end_character) = @ARGV;
 
@@ -26,7 +29,9 @@ $query = perl_string_decode($query);
 system "stty", '-icanon', '-echo', 'eol', "\001";
 
 
-print $query;
+# print to STDERR instead of STDOUT, so this can work with
+# Bash's $(ansi_reply.pl ...) mechanism
+print STDERR $query;
 $|++;
 
 
@@ -46,8 +51,23 @@ eval {
 die $@      if ($@ && $@ ne "alarm\n");
 
 
-print "  query:  ", perl_string_encode($query), "\n";
-print "  reply:  ", perl_string_encode($reply), "\n";
+if (!$cmdline_raw) {
+    print "  query:  ", perl_string_encode($query), "\n";
+    print "  reply:  ", perl_string_encode($reply), "\n";
+} else {
+    #print perl_string_encode($reply), "\n";
+
+    # Split into words, to make it easier to injest by Bash's array-splitting behavior, or by cut(1).
+    # For example:
+    #       arr=($(./ansi_reply.pl -r '\e[6n' R))
+    #       echo current row: ${arr[1]} column: ${arr[3]}
+    #       
+    # Or:
+    #       row=$(./ansi_reply.pl -r '\e[6n' R | cut -f 2)
+    #       col=$(./ansi_reply.pl -r '\e[6n' R | cut -f 4)
+    my @a = split /(?<=\d)(?=\D)|(?<=\D)(?=\d)|(?<=[a-z])(?=[^a-z])|(?<=[^a-z])(?=[a-z])/i, $reply;
+    print join("\t", map {perl_string_encode($_)} @a), "\n";
+}
 
 
 ## reset tty mode before exiting
