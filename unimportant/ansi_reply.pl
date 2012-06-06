@@ -43,9 +43,7 @@ eval {
         }
     }
 };
-if ($@) {
-    die $@      unless ($@ eq "alarm\n");
-}
+die $@      if ($@ && $@ ne "alarm\n");
 
 
 print "  query:  ", perl_string_encode($query), "\n";
@@ -71,7 +69,7 @@ sub perl_string_decode {
 sub perl_string_encode {
     my $decoded = shift;
     my $encoded = Data::Dumper::qquote($decoded);
-    $encoded =~ s/^"|"$//sg;
+    $encoded =~ s/^"(.*)"$/$1/s;
     return $encoded;
 }
 
