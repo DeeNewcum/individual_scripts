@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+
+# The start of a live-preview script for writing README.md files on Github.
+# It uses the Github itself to create the previews, so it should match Github's rendering exactly.
+#
+# Currently, it only does the conversion.  However, I plan to add more features
+# (file-change detection, LiveReload.com) to make it work without manual intervention.
+
+    use strict;
+    use warnings;
+
+    use LWP::Simple;
+    use URI::Escape;
+
+    use Data::Dumper;
+    #use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
+
+
+my $filename = shift
+    or die "usage: $0 <markdown_file>\n";
+
+my $markdown = slurp($filename);
+
+my $html = github_mardown_to_html($markdown);
+
+print $html;
+
+
+
+
+# convert Markdown to HTML, using Github to do the conversion, so you can be sure 
+use LWP::Simple;
+sub github_mardown_to_html {
+    my ($markdown) = @_;
+ 
+    ## the comment-preview function on gist uses POST, but GET seems to work okay
+    ##
+    ## for example:
+    ##      https://gist.github.com/preview?text=this%20is%20a%20**test**
+    return LWP::Simple::get("https://gist.github.com/preview?text=" .  URI::Escape::uri_escape_utf8($markdown));
+
+        ## I tried to do POST, and it errored out.  I suspect this was because I wasn't logged in,
+        ## but I'm not 100% sure what the root-cause was.  GET probably has length-limits, so we
+        ## might watn to exlore POST more later.
+}
+
+
+# quickly read a whole file
+sub slurp {my$p=open(my$f,"$_[0]")or die$!;my@o=<$f>;close$f;waitpid($p,0);wantarray?@o:join("",@o)}
