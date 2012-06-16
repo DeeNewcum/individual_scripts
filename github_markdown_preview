@@ -28,21 +28,27 @@ print $html;
 
 
 
-# convert Markdown to HTML, using Github to do the conversion, so you can be sure 
-use LWP::Simple;
+# convert Markdown to HTML, using Github to do the conversion, so you can be sure your preview
+# looks exactly like it will look once you upload it
 sub github_markdown_to_html {
     my ($markdown) = @_;
  
-    ## the comment-preview function on gist uses POST, but GET seems to work okay
-    ##
-    ## for example:
+    ## the comment-preview function on gist normally uses POST, but GET works too:
     ##      https://gist.github.com/preview?text=this%20is%20a%20**test**
-    return LWP::Simple::get("https://gist.github.com/preview?text=" .  URI::Escape::uri_escape_utf8($markdown));
 
-        ## I tried to do POST, and it errored out.  I suspect this was because I wasn't logged in,
-        ## but I'm not 100% sure what the root-cause was.  GET probably has length-limits, so we
-        ## might watn to exlore POST more later.
+    return LWP::Simple::get("https://gist.github.com/preview?text=" .  URI::Escape::uri_escape_utf8($markdown));
 }
+        ## Currently, the above code uses GET instead of POST.
+        ##
+        ## I experimented with POST, but it failed.  I *believe* (90% confidence) that it's because
+        ## it rejects POST unless you have logged in to Github.
+        ##
+        ## GET has file-length limitations, so we probably want to get this script working with
+        ## POST at some point.
+        ##
+        ## See here for a great idea for logging in to Github for this script:
+        ##      http://paperlined.org/dev/perl/modules/related_modules/use_browser_cookies.html
+
 
 
 # quickly read a whole file
