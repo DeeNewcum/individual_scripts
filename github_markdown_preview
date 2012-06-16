@@ -21,7 +21,7 @@ my $filename = shift
 
 my $markdown = slurp($filename);
 
-my $html = github_mardown_to_html($markdown);
+my $html = github_markdown_to_html($markdown);
 
 print $html;
 
@@ -30,7 +30,7 @@ print $html;
 
 # convert Markdown to HTML, using Github to do the conversion, so you can be sure 
 use LWP::Simple;
-sub github_mardown_to_html {
+sub github_markdown_to_html {
     my ($markdown) = @_;
  
     ## the comment-preview function on gist uses POST, but GET seems to work okay
