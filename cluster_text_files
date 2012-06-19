@@ -6,6 +6,7 @@
 
 # see also:
 #       http://paperlined.org/dev/perl/modules/related_modules/text_cluster.html
+#       http://paperlined.org/dev/perl/modules/documentation/String::Cluster::Hobohm.html
 
     use strict;
     use warnings;
