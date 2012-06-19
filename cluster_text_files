@@ -23,7 +23,7 @@
     #use Carp::Always;
 
 
-    const my $simil    => 0.75;         # a number between 0 and 1    1 means "exactly the same" (see String::Clusterer::Hobohm docs) 
+    const my $simil    => 0.50;         # a number between 0 and 1    1 means "exactly the same" (see String::Clusterer::Hobohm docs) 
     const my $SIMPLIFY => 1;
     const my $DEBUG    => 1;
 
