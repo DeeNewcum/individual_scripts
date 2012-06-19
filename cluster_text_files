@@ -15,6 +15,7 @@
     use String::Cluster::Hobohm;
     use Time::HiRes qw[time];
     use List::Util qw[min max];
+    use File::Basename;
 
     use Data::Dumper;
     #use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
@@ -36,6 +37,12 @@ my %text_files_inv;     # keys and values are inverted here
 find({ wanted => \&file_find_wanted, follow => 1, no_chdir => 1 }, '.');
 
     sub file_find_wanted {
+        # prune .git/ directories
+        if (basename($File::Find::name) eq '.git' && -d $File::Find::name) {
+            $File::Find::prune = 1;
+            return;
+        }
+
         if (-f $File::Find::name && -T $File::Find::name) {
             my $cont = slurp($File::Find::name);
             $text_files{$File::Find::name} = $cont;
