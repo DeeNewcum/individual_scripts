@@ -22,8 +22,9 @@
     #use Carp::Always;
 
 
-    const my $simil => 0.75;     # a number between 0 and 1    1 means "exactly the same" (see String::Clusterer::Hobohm docs) 
+    const my $simil    => 0.75;         # a number between 0 and 1    1 means "exactly the same" (see String::Clusterer::Hobohm docs) 
     const my $SIMPLIFY => 1;
+    const my $DEBUG    => 1;
 
 
 setpriority 0, 0, getpriority(0, 0) + 20;       # nice ourselves...  this can be incredibly CPU-intensive
@@ -51,7 +52,8 @@ find({ wanted => \&file_find_wanted, follow => 1, no_chdir => 1 }, '.');
     }
 
 
-print Dumper [keys %text_files];
+print Dumper [keys %text_files]
+    if $DEBUG;
 
 
 ## demonstrate the output of simplify_string
@@ -84,6 +86,7 @@ my $groups = $clusterer->cluster( \@f );
 
 
 ## output the findings
+print "\n\n";
 my $first_time = 1;
 foreach my $group (@$groups) {
     if (scalar(@$group) > 1) {
@@ -173,14 +176,19 @@ sub install_progress_monitor {
         my $t0 = time();
         my $return = $orig->(@_);
         my $ttot = time() - $t0;
-        $mon_count++;
-        $mon_time += $ttot;
-        $mon_max = max($mon_max, $ttot);
-        $mon_min = min($mon_min, $ttot);
-        #printf "%d comparisons at an average of %0.2fs each\n", $mon_count, $mon_time / $mon_count;
-        printf "comparison %d = %6d ms      (%0.2f min, %0.2f ave, %0.2f max)\n",
-            $mon_count, $ttot * 1000,
-            $mon_min, $mon_time / $mon_count, $mon_max;
+        if ($DEBUG) {
+            $mon_count++;
+            $mon_time += $ttot;
+            $mon_max = max($mon_max, $ttot);
+            $mon_min = min($mon_min, $ttot);
+            #printf "%d comparisons at an average of %0.2fs each\n", $mon_count, $mon_time / $mon_count;
+            printf "comparison %d = %6d ms      (%0.2f min, %0.2f ave, %0.2f max)\n",
+                $mon_count, $ttot * 1000,
+                $mon_min, $mon_time / $mon_count, $mon_max;
+        } else {
+            print ".";
+            $| = 1;
+        }
         return $return;
     };
     use warnings;
