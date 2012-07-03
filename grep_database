@@ -22,8 +22,20 @@ my $regexp = shift      or die "Specify a regular expression to search for.\n";
 $regexp = qr/$regexp/;      # compile that
 
 
-# unfortunately, getting a list of databases ("catalogs") varies by DB driver
+# automatically figure out the username/password, if possible
+#       http://paperlined.org/dev/perl/modules/documentation/DBI/discovering_username_password.html
 $db_driver =~ s/^DBI:://;
+if ($db_driver eq 'mysql' && -f "$ENV{HOME}/.my.cnf") {
+    eval {
+        use Config::INI::Reader;
+        my $parsed = Config::INI::Reader->read_file("$ENV{HOME}/.my.cnf");
+        $db_username = $parsed->{client}{user};
+        $db_password = $parsed->{client}{password};
+    };
+}
+
+
+# unfortunately, getting a list of databases ("catalogs") varies by DB driver
 our $dbh;
 my @data_sources;
 if ($db_driver eq 'mysql') {
