@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+
+# search ALL databases, all tables, and all fields of a MySQL database for a regular expression
+
+    use strict;
+    use warnings;
+
+    use DBI;
+    use Data::Dumper;
+
+    my $ANSI_MOVE_BOL     = "\r";
+    my $ANSI_ERASE_TO_EOL = "\e[K";
+
+    #### edit these ############################
+    our $db_driver   = 'DBI::mysql';
+    our $db_username = 'myusername';
+    our $db_password = 'mypassword';
+    #### edit these ############################
+
+
+my $regexp = shift      or die "Specify a regular expression to search for.\n";
+$regexp = qr/$regexp/;      # compile that
+
+
+# unfortunately, getting a list of databases ("catalogs") varies by DB driver
+$db_driver =~ s/^DBI:://;
+our $dbh;
+my @data_sources;
+if ($db_driver eq 'mysql') {
+    @data_sources = DBI->data_sources($db_driver, {user => $db_username, password => $db_password});
+} elsif ($db_driver eq 'Informix') {
+    $dbh = DBI->connect($db_driver, $db_username, $db_password);
+    @data_sources = DBI->data_sources($db_driver);
+} elsif ($db_driver eq 'Oracle' || $db_driver eq 'Informix') {
+    @data_sources = DBI->data_sources($db_driver);
+} else {
+    die "I don't know how to run DBI->data_sources() for driver '$db_driver'\n\t";
+}
+
+
+foreach my $data_source (@data_sources) {
+
+    my (undef, undef, undef, undef, $driver_dsn) = DBI->parse_dsn($data_source);
+    #print "$data_source\n", Dumper [DBI->parse_dsn($data_source)]; next;
+
+    $dbh = DBI->connect($data_source, $db_username, $db_password)
+        or die;
+
+    my @tables = $dbh->tables('%', '', '');
+    #print "==== $driver_dsn ====\n", Dumper \@tables; next;
+    foreach my $table (@tables) {
+        print ".";      $| = 1;
+        search_table($driver_dsn, $table);
+    }
+}
+print $ANSI_MOVE_BOL, $ANSI_ERASE_TO_EOL;
+
+
+
+BEGIN {
+    my %fields_seen;
+
+    sub search_table {
+        my ($driver_dsn, $table) = @_;
+        
+        my $display_table = $table;
+        $display_table =~ s/^`(.*)`$/$1/s;
+
+        my $display_header = $ANSI_MOVE_BOL . $ANSI_ERASE_TO_EOL .
+                    "==== $driver_dsn.$display_table ====\n";
+
+        my $sth = $dbh->prepare("SELECT * FROM $table")          or die $dbh->errstr;
+        my $rv  = $sth->execute()              or die $sth->errstr;
+        while (my $row = $sth->fetchrow_hashref()) {
+            while (my ($field, $val) = each %$row) {
+                if (defined($val) && $val =~ $regexp) {
+                    next if $fields_seen{"$driver_dsn.$table.$field"}++;
+                    print $display_header if $display_header;
+                    $display_header = "0";
+                    print "  $field\n";
+                }
+            }
+        }
+
+        print "\n" if ($display_header eq '0');
+    }
+}
+
+
+# DBI has selectall_arrayref() and selectall_hashref(), but no selectall_listofhashes().  Fix that.  
+sub DBI::db::selectall_listofhashes {my($dbh,$stmt,$attr,@bind)=@_;@{$dbh->selectall_arrayref($stmt,{%{$attr||{}},Slice=>{}},@bind)}}
+sub DBI::st::fetchall_listofhashes {my($sth,$slice,$max_rows)=@_;@{$sth->fetchall_arrayref($slice||{},$max_rows)}}
