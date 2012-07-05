@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
-# search ALL databases, all tables, and all fields of a MySQL database for a regular expression
+# Search ALL databases, all tables, and all fields of a database for a regular expression.
+
+
+# 
 
     use strict;
     use warnings;
@@ -81,6 +84,11 @@ BEGIN {
         my $display_header = $ANSI_MOVE_BOL . $ANSI_ERASE_TO_EOL .
                     "==== $driver_dsn.$display_table ====\n";
 
+        ## Right now, we fetch ALL data from the database, and look through it client-side.
+        ## It would be much faster if we asked the server-side to do pattern-matching.
+        ## However, for smaller datasets, and when working on the same machine as the server,
+        ##      it's not too slow.  And it's nice to be able to run a Perl regexp over the data.
+        ##      (particularly if you're more comfortable with Perl regexps than the 'LIKE' syntax)
         my $sth = $dbh->prepare("SELECT * FROM $table")          or die $dbh->errstr;
         my $rv  = $sth->execute()              or die $sth->errstr;
         while (my $row = $sth->fetchrow_hashref()) {
