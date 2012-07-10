@@ -76,7 +76,7 @@ if(!$app_to_launch) {
 } else {
     my %apps = map {@$_} @apps;
     my $app_url = $apps{$app_to_launch}
-        or die "App '$app_to_launch' not found.\n";
+        or die("App '$app_to_launch' not found.  Available apps are:\n\t" . join("\n\t", keys %apps) . "\n");
     my $ica_file = Citrix_create_ica_launch_file($mech, $app_url);
     #do_ica_override($ica_file, $ICA_override);
     print "Launching    $app_to_launch...\n";
