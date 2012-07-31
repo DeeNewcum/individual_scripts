@@ -17,15 +17,15 @@ our @colors;
 
 BEGIN{
     # Process the command-line arguments.
-    # Every other argument goes into @all_patterns, and the other ones go into @colors.
-    my ($i, $j) = (0, 0);       # counters to keep track of alternation
+    # Odd arguments go into @all_patterns, even arguments go into @colors.
+    my ($i, $j) = (0, 0);       # counters to keep track of even/odd alternation
     my @all_patterns = grep{++$i % 2} @ARGV;
     # Combine all regexps into one.
     #
     #       (combining is required, so that we can easily find whichever regexp that matches EARLIEST in the string
     #         -- we can't match one regexp near the end of the string, and then
     #            go back to an earlier part of the string to match another
-    #            regexp, because we're marching monotonically through the
+    #            regexp, because we need to march monotonically through the
     #            string)
     #
     #       (we're marching monotonically through the string, so that we make
@@ -33,7 +33,8 @@ BEGIN{
     #           part still to be matched is to the right, so that we never try
     #           to match regexps against the modified part of the string,
     #           because matching against just-placed ANSI codes results in a
-    #           mess of nested ANSI codes that don't work)
+    #           mess of nested ANSI codes that don't work;  also, it can result
+    #           in regexps accidentally matching the ANSI code characters themselves)
     $all_patterns = join("|",
                         map {"($_)"}        # the parens allow us to later detect which pattern matched, via the capture-group number -- see find_capture_group()
                         @all_patterns);
@@ -45,18 +46,24 @@ BEGIN{
 
 
 
-# This line, combined with   perl -0777 -pe,  is the meat of the script.
+# This one line, combined with   perl -0777 -pe,  is the meat of the script.
 #
-#           -p          means before this script, Perl reads in STDIN to $_,  and after this script, Perl prints out the value $_   (which we've presumably changed)
-#           -0777       means Perl slurps in ALL data from STDIN, and we process it all at once, as one giant string  (instaed of line-by-line)
+#   -p          means before this script, Perl reads in STDIN to $_,  and
+#               after this script, Perl prints out the value $_
+#               (which we've presumably changed)
 #
+#   -0777       means Perl slurps in ALL data from STDIN, and we process it
+#               all at once, as one giant string  (instead of line-by-line)
+#
+
 $_ =~ s/$all_patterns/ &find_capture_group /gome;
 
 
 
 # Gets called several times from inside the substitution above.
 #
-# This looks through @- to find out which capture-group matched, and then returns the ANSI color code associated with that regexp.
+# This looks through @- to find out which capture-group matched, and then
+# returns the ANSI color code associated with that regexp.
 sub find_capture_group {
     my $capture;      # the number of the capture-group that matched  (eg. $1, $2, $3, etc)
     for ($capture=0;  $capture<@colors && !defined($-[$capture+1]);  $capture++)
