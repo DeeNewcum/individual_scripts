@@ -1,13 +1,8 @@
-#!/bin/sh
-exec perl -x "$0" "$@"       # vim: set syntax=perl:
-exit
+#!/usr/bin/perl -0777p
 
 ########################################################
 ##  This is the non-minified version of hil.minified  ##
 ########################################################
-
-#!/usr/bin/perl -p -0777
-#line 11
 
     use strict;
     use warnings;
@@ -22,11 +17,11 @@ BEGIN{
     my @all_patterns = grep{++$i % 2} @ARGV;
     # Combine all regexps into one.
     #
-    #       (combining is required, so that we can easily find whichever regexp that matches EARLIEST in the string
-    #         -- we can't match one regexp near the end of the string, and then
-    #            go back to an earlier part of the string to match another
-    #            regexp, because we need to march monotonically through the
-    #            string)
+    #       (combining is required, so that we can easily find whichever regexp
+    #            that matches EARLIEST in the string -- we can't match one regexp
+    #            near the end of the string, and then go back to an earlier part
+    #            of the string to match another regexp, because we need to
+    #            march monotonically through the string)
     #
     #       (we're marching monotonically through the string, so that we make
     #           sure the modified part of the string is always to the left, and the
