@@ -45,6 +45,8 @@ foreach my $syslog (sort {firstnum($b) <=> firstnum($a)} glob '/var/log/syslog*'
                 $status = 'sleep';
             } elsif ($entry{text} eq 'PM: Finishing wakeup.') {
                 $status = 'wake';
+            } elsif ($entry{text} =~ /init: tty1 main process \(\d+\) killed by TERM signal/) {
+                $status = 'shutdown';
             }
         }
         if (defined($status)) {
