@@ -1,0 +1,2 @@
+- "VT320 Report Requests and Responses" here:
+        http://www.columbia.edu/kermit/ftp/a/msvibm.vt
