@@ -39,12 +39,21 @@ my $reply = '';
 eval {
     local $SIG{ALRM} = sub { die "alarm\n" };
     alarm(TIMEOUT);
-    while (1) {
-        if (defined(my $c = getc())) {
-            #print ".";
-            $reply .= $c;
-            last if (defined($response_end_character)
-                  && $c eq $response_end_character);
+
+    if (defined($response_end_character) && $response_end_character eq '') {
+        # an empty-string means "read everything that's in the buffer"...  this assumes that
+        # the response will be sent all-at-once, and that there will be a slight timegap in between
+        # the response and anything the human types
+        my $numchars = sysread(STDIN, $reply, 1024);
+        $reply = substr($reply, 0, $numchars);
+    } else {
+        while (1) {
+            if (defined(my $c = getc())) {
+                #print ".";
+                $reply .= $c;
+                last if (defined($response_end_character)
+                      && $c eq $response_end_character);
+            }
         }
     }
 };

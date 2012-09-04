@@ -26,4 +26,4 @@ echo
 
 
 echo "======== ENQ (enquire) / answerback ========"
-./ansi_reply.pl  '\005'
+./ansi_reply.pl  '\005' ''
