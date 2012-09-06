@@ -35,6 +35,11 @@ echo "======== query secondary device attributes ========"
 echo
 
 
+echo "======== query tertiary device attributes ========"
+./ansi_reply.pl  '\e[=c' ''
+echo
+
+
 echo "======== ENQ (enquire) / answerback ========"
 ./ansi_reply.pl  '\005' ''
 echo
