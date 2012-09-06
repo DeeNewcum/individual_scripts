@@ -1,15 +1,15 @@
 Results for different terminal emulators:
 
 
-                        Putty           SecureCRT       libVTE
+                        Putty           SecureCRT       libVTE          linux console
 
-device status           \e[0n           \e[0n
+device status           \e[0n           \e[0n           \e[0n           \e[0n
 
-printer status          -               \e[?10n
+printer status          -               \e[?10n         \e[?11n         -
 
-device attributes       \e[?6c          \e[?1;2c 
+device attributes       \e[?6c          \e[?1;2c        \e[?62;9;c      \e[?6c
 
-2ndary dev attr         \e[>0;136;0c    -
+2ndary dev attr         \e[>0;136;0c    -               \e[>1;2600;0c   -
 
-terminal params         \e[2;1;1;112;112;1;0x
+terminal params         \e[2;1;1;112;112;1;0x           -               -
                                         \e[2;1;1;120;120;1;0x
