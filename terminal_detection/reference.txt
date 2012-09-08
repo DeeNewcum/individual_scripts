@@ -1,9 +1,0 @@
-- "VT320 Report Requests and Responses" here:
-        http://www.columbia.edu/kermit/ftp/a/msvibm.vt
-
-- http://invisible-island.net/vttest/
-
-
-==== general =====
-
-http://vt100.net/
