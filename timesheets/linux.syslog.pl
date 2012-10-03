@@ -17,42 +17,62 @@
     use POSIX;
     use Data::Dumper;
 
-foreach my $syslog (sort {firstnum($b) <=> firstnum($a)} glob '/var/log/syslog*') {
-    my $fin;
-    if ($syslog =~ /\.gz$/) {
-        open $fin, '-|', 'gzip', '-dc', $syslog      or die $!;
-    } else {
-        open $fin, '<', $syslog      or die $!;
-    }
-    while (<$fin>) {
-        my %entry = %{parse_syslog_line($_) or next};
-        my $status;
-        if ($entry{program} eq 'rsyslogd') {
-            $entry{text} =~ s/^(\[.*?\])\s*//  and $entry{origin} = $1;
-            next unless ($entry{text} eq 'exiting on signal 15.' || $entry{text} eq 'start');
-            #print Dumper \%entry;
-            if ($entry{text} eq 'start') {
-                $status = 'boot';
-            } else {
-                $status = 'shutdown';
-            }
+
+my $last_day = '';
+
+scan_syslogs(sub {
+    my ($date, $event) = @_;
+
+    my $this_day = POSIX::strftime('%F', localtime($date));
+    print "\n" if ($this_day ne $last_day);
+    $last_day = $this_day;
+
+    printf "%-20s %s\n",
+        POSIX::strftime('%a %b %d  %H:%M', localtime($date)),
+        $event;
+});
+
+
+
+# scan all the syslogs, looking for events having to do with startup/shutdown or sleep/wake
+sub scan_syslogs {
+    my ($callback) = @_;
+
+    foreach my $syslog (sort {firstnum($b) <=> firstnum($a)} glob '/var/log/syslog*') {
+        my $fin;
+        if ($syslog =~ /\.gz$/) {
+            open $fin, '-|', 'gzip', '-dc', $syslog      or die $!;
+        } else {
+            open $fin, '<', $syslog      or die $!;
         }
-        if ($entry{program} eq 'kernel') {
-            $entry{text} =~ s/^\[(.*?)\]\s*//  and $entry{time_since_boot} = $1;
-            #print $entry{line};
-            #print Dumper \%entry;
-            if ($entry{text} eq 'PM: Preparing system for mem sleep') {
-                $status = 'sleep';
-            } elsif ($entry{text} eq 'PM: Finishing wakeup.') {
-                $status = 'wake';
-            } elsif ($entry{text} =~ /init: tty1 main process \(\d+\) killed by TERM signal/) {
-                $status = 'shutdown';
+        while (<$fin>) {
+            my %entry = %{parse_syslog_line($_) or next};
+            my $status;
+            if ($entry{program} eq 'rsyslogd') {
+                $entry{text} =~ s/^(\[.*?\])\s*//  and $entry{origin} = $1;
+                next unless ($entry{text} eq 'exiting on signal 15.' || $entry{text} eq 'start');
+                #print Dumper \%entry;
+                if ($entry{text} eq 'start') {
+                    $status = 'boot';
+                } else {
+                    $status = 'shutdown';
+                }
             }
-        }
-        if (defined($status)) {
-            printf "%-20s %s\n",
-                    POSIX::strftime('%a %b %d %H:%M', localtime($entry{date})),
-                    $status;
+            if ($entry{program} eq 'kernel') {
+                $entry{text} =~ s/^\[(.*?)\]\s*//  and $entry{time_since_boot} = $1;
+                #print $entry{line};
+                #print Dumper \%entry;
+                if ($entry{text} eq 'PM: Preparing system for mem sleep') {
+                    $status = 'sleep';
+                } elsif ($entry{text} eq 'PM: Finishing wakeup.') {
+                    $status = 'wake';
+                } elsif ($entry{text} =~ /init: tty1 main process \(\d+\) killed by TERM signal/) {
+                    $status = 'shutdown';
+                }
+            }
+            if (defined($status)) {
+                $callback->($entry{date}, $status);
+            }
         }
     }
 }
