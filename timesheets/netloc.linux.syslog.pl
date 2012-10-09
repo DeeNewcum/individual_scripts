@@ -17,7 +17,7 @@
     use POSIX qw[strftime];
 
     use Data::Dumper;
-    use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
+    #use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
 
 
 my @accum;
