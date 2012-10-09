@@ -2,7 +2,11 @@
 
 # Scans the network logins from syslog, and try to guess where (geolocation) each login occurred.
 # 
-# This can help augment the timeslips by figuring out where my computer was at the given time.
+# This can help you in filling out timeslips, by figuring out where my computer was at the given time.
+
+# NOTE: for this to work properly, you *must* customize geolocation() below so that it recognizes
+#       the networks that you personally attach to frequently
+
 
 
 # TODO:
@@ -75,7 +79,10 @@ sub process_login {
 
     ## determine geolocation
     my $geolocation = geolocation(\%fields);
-    print Dumper \%fields   if ($geolocation =~ /^\?/);
+    if ($geolocation =~ /^\?/) {
+        print "ERROR: Unknown network.  You should customize geolocation() to recognize your network.\n";
+        print Dumper \%fields;
+    }
 
     ## output conclusion
     if ($geolocation) {
