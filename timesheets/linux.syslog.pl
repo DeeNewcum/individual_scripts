@@ -1,13 +1,17 @@
 #!/usr/bin/perl
 
-# Calculate computer boot/shutdown times from /var/log/syslog*.
-# 
-# It can detect these events:
-#       - system boot
-#       - system shutdown
-#       - sleep-enter
-#       - sleep-exit
-#       - (probably more, but that's all that's tested right now)
+# This is able to detect sleep/hibernate events, which the wtmp method can't do.
+#
+# Calculates computer boot/shutdown times from /var/log/syslog*.
+
+
+
+        # It can currently detect these events:
+        #       - system boot
+        #       - system shutdown
+        #       - sleep-enter
+        #       - sleep-exit
+        #       - TODO: there are probably more events that we could detect
 
 
     use strict;
