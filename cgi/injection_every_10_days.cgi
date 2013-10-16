@@ -26,6 +26,7 @@ for (my $day_offset=0; $day_offset < 80 * $row_width;  $day_offset++) {
 
     my ($year, $month, $day) = split ' ',
                                   strftime "%Y %b %e", localtime($starting_day + $day_offset * 86400);
+    $month = uc $month;
 
     #print "$year -- $month -- $day\n";
     my $col = $day_offset % $row_width;
