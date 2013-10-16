@@ -1,0 +1,148 @@
+
+<style>
+
+    /* --==##  simple spacer  ##==-- */
+    ins {margin-left:3em; text-decoration:none}
+                    /* ^^ abuses the <ins> tag, uses it for something else entirely */
+
+    /* --==##  default to sans-serif font  ##==-- */
+                    /* but when printing, use the default serif */
+    body, td {font-family: sans-serif}
+    @media print { body, td {font-family: serif} }
+
+    /* --==##  links aren't underlined unless you :hover  ##==-- */
+    a:link:hover {text-decoration:underline; background-color:#aaf; color:#000!important}
+    a:visited:hover {background-color:#faf; color:#000!important}
+    a {text-decoration:none}
+    @media print { a {text-decoration:underline} }
+
+    /* --==##  make h1/h2/h3 stand out with bars  ##==-- */
+    h1, h2, h3 {padding:0.3em; border-top:2px solid #000; border-bottom:2px solid #000;
+    background-color:#ccc; margin-top:2em}
+    body>h1:first-child, body>h2:first-child, body>h3:first-child {margin-top:0}
+
+    /* --==##  table cells have a nice border  ##==-- */
+    table.wikitable {border-collapse:collapse}
+    table.wikitable td, table.wikitable th {border:1px solid #aaa; padding:0.3em}
+    table.wikitable th {background-color:#000; color:#fff}
+    table.wikitable th a {color:#aaf}
+    table.wikitable th a:visited {color:#faf}
+    table.wikitable tr.header td, table.wikitable thead td {border:#fff}
+
+    /* --==##  kbd has gray background  ##==-- */
+    kbd {background-color:#bbb}
+
+    /* --==##  selectively make ul/ol spaced (non-cascading)  ##==-- */
+    ul.spaced > li, ol.spaced > li {margin-bottom:1em}
+    .spaced > li > .spaced {margin-top:1em}
+
+    /* --==##  CSS reset  ##==-- */
+    a img {border:0}
+
+    /* --==##  text is grayed-out for digressions  ##==-- */
+    .digression     {color:#aaa}
+    span.digression {margin-left:2em}
+    .digression     a {color:#aaf}
+    .digression     a:visited {color:#e9e}
+
+    /* BODY option -- make ul/ol be half-spaced */
+    ul.halfspaced > li, ol.halfspaced > li, body.halfspaced li {margin-bottom:0.5em}
+    .halfspaced > li > .halfspaced, body.halfspaced li > ul, body.halfspaced li > ol {margin-top:0.5em}
+</style>
+
+<style>
+    table {font-size:60%}
+    td, th {text-align:center; border:1px solid #000!important; padding:0.2em!important}
+    td > div {position:relative; left:0; top:-0.6em; width:0; height:0}      /* divs will float outside the normal document flow */
+    td > div > div {width:3.3em; height:1em; /* border:1px solid red */ }
+    td.grayright {border-right:1px solid #888!important}      /* make the border on the right-side gray */
+</style>
+
+
+<table class="wikitable">
+
+<tr><td colspan=10 style="border-left:hidden!important; border-top:hidden!important;
+                border-right:hidden!important; font-size:120%">
+        <center><b>every 10 days
+
+<tr><td class=grayright><div><div><center>2013</center></div></div> <td><td class=grayright><div><div><center>Jan</center></div></div> <td><td>5<td>6<td>7<td>8<td>9<td>10
+<tr><td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20
+<tr><td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30
+<tr><td>31<td class=grayright><div><div><center>Feb</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9
+<tr><td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19
+<tr><td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>1
+<tr><td class=grayright><div><div><center>Mar</center></div></div> <td><td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11
+<tr><td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21
+<tr><td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30<td>31
+<tr><td class=grayright><div><div><center>Apr</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9<td>10
+<tr><td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20
+<tr><td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30
+<tr><td class=grayright><div><div><center>May</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9<td>10
+<tr><td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20
+<tr><td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30
+<tr><td>31<td class=grayright><div><div><center>Jun</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9
+<tr><td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19
+<tr><td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29
+<tr><td>30<td class=grayright><div><div><center>Jul</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9
+<tr><td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19
+<tr><td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29
+<tr><td>30<td>31<td class=grayright><div><div><center>Aug</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8
+<tr><td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18
+<tr><td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28
+<tr><td>29<td>30<td>31<td class=grayright><div><div><center>Sep</center></div></div> <td><td>3<td>4<td>5<td>6<td>7
+<tr><td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17
+<tr><td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27
+<tr><td>28<td>29<td>30<td class=grayright><div><div><center>Oct</center></div></div> <td><td>3<td>4<td>5<td>6<td>7
+<tr><td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17
+<tr><td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27
+<tr><td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Nov</center></div></div> <td><td>3<td>4<td>5<td>6
+<tr><td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16
+<tr><td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26
+<tr><td>27<td>28<td>29<td>30<td class=grayright><div><div><center>Dec</center></div></div> <td><td>3<td>4<td>5<td>6
+<tr><td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16
+<tr><td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26
+<tr><td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>2014</center></div></div> <td><td class=grayright><div><div><center>Jan</center></div></div> <td><td>5
+<tr><td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15
+<tr><td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25
+<tr><td>26<td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Feb</center></div></div> <td><td>3<td>4
+<tr><td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14
+<tr><td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24
+<tr><td>25<td>26<td>27<td>28<td class=grayright><div><div><center>Mar</center></div></div> <td><td>3<td>4<td>5<td>6
+<tr><td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15<td>16
+<tr><td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25<td>26
+<tr><td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Apr</center></div></div> <td><td>3<td>4<td>5
+<tr><td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15
+<tr><td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25
+<tr><td>26<td>27<td>28<td>29<td>30<td class=grayright><div><div><center>May</center></div></div> <td><td>3<td>4<td>5
+<tr><td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14<td>15
+<tr><td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24<td>25
+<tr><td>26<td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Jun</center></div></div> <td><td>3<td>4
+<tr><td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14
+<tr><td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24
+<tr><td>25<td>26<td>27<td>28<td>29<td>30<td class=grayright><div><div><center>Jul</center></div></div> <td><td>3<td>4
+<tr><td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13<td>14
+<tr><td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23<td>24
+<tr><td>25<td>26<td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Aug</center></div></div> <td><td>3
+<tr><td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12<td>13
+<tr><td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22<td>23
+<tr><td>24<td>25<td>26<td>27<td>28<td>29<td>30<td>31<td class=grayright><div><div><center>Sep</center></div></div> <td>
+<tr><td>3<td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12
+<tr><td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22
+<tr><td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30<td class=grayright><div><div><center>Oct</center></div></div> <td>
+<tr><td>3<td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11<td>12
+<tr><td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21<td>22
+<tr><td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30<td>31<td>1
+<tr><td class=grayright><div><div><center>Nov</center></div></div> <td><td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11
+<tr><td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21
+<tr><td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30<td>1
+<tr><td class=grayright><div><div><center>Dec</center></div></div> <td><td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11
+<tr><td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20<td>21
+<tr><td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30<td>31
+<tr><td class=grayright><div><div><center>2015</center></div></div> <td><td class=grayright><div><div><center>Jan</center></div></div> <td><td>5<td>6<td>7<td>8<td>9<td>10
+<tr><td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19<td>20
+<tr><td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>29<td>30
+<tr><td>31<td class=grayright><div><div><center>Feb</center></div></div> <td><td>3<td>4<td>5<td>6<td>7<td>8<td>9
+<tr><td>10<td>11<td>12<td>13<td>14<td>15<td>16<td>17<td>18<td>19
+<tr><td>20<td>21<td>22<td>23<td>24<td>25<td>26<td>27<td>28<td>1
+<tr><td class=grayright><div><div><center>Mar</center></div></div> <td><td>4<td>5<td>6<td>7<td>8<td>9<td>10<td>11
+</table>
