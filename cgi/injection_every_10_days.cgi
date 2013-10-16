@@ -1,5 +1,14 @@
 #!/usr/bin/perl
 
+# This helps you print out a calendar for an activity that repeats every 10 days.
+# (its raison detre is for every-10-day injections)
+#
+# If you complete the activity as planned, you should have a single straight line running down the
+# calendar, after crossing off days when it was completed.
+#
+# If, instead, you're negligent and don't always complete the activityon time, it will be a broken
+# line that meanders a bit (a lot).
+
     use strict;
     use warnings;
 
