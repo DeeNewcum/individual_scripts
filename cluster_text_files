@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+# THIS SCRIPT IS DEPRECATED.
+# USE THIS INSTEAD, it's fully fleshed-out, and it does everything I was trying to do all along.
+#           http://www.forensicswiki.org/wiki/Ssdeep
+
+
+
 # do cluster-analysis on text files, based on the Levenshtein metric
 
 # it analyzes ALL text files under the current directory
