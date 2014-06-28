@@ -1,3 +1,5 @@
+## TODO: use Term::ANSIColor, so we can use color names instead of numbers ##
+
 # hil #
 
 <tt>hil</tt> is a command-line utility that adds ANSI color hilighting to text.
