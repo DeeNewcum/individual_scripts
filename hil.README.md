@@ -70,3 +70,17 @@ Hilight the field-separators in cyan, and hilight the shell field with a white f
     diff -U 9999999 file1 file2 | hil    '^\+.*' 92    '^-.*' 91
 
 Show the changes to a file, with the added lines hilighted in green and the deleted lines in red.
+
+## See also
+
+Other programs that do something similar include:
+
+* [multitail](https://en.wikipedia.org/wiki/MultiTail)
+* [generic colouriser](http://manpages.ubuntu.com/manpages/trusty/man1/grcat.1.html)
+* [ccze](http://manpages.ubuntu.com/manpages/trusty/man1/ccze.1.html)
+* [pycolor](http://manpages.ubuntu.com/manpages/trusty/man1/pycolor.1.html)
+* [colortail](http://manpages.ubuntu.com/manpages/trusty/man1/colortail.1.html)
+* [GNU source-hilight](http://manpages.ubuntu.com/manpages/trusty/man1/source-highlight.1.html)
+* ... and countless others  [[1]](https://bitbucket.org/linibou/colorex/wiki/Home) [[2]](https://github.com/nicoulaj/rainbow) [[3]](https://github.com/armandino/TxtStyle)
+
+The main benefit to hil is that it can run on [damn near any Unix, without installing anything](http://paperlined.org/dev/perl/portability.html).
