@@ -1,0 +1,1 @@
+The [Citrix wfica](https://en.wikipedia.org/wiki/Independent_Computing_Architecture) seems to be very uncooperative with my Linux window managers.  This folder contains a few scripts and how-to documents to try to fix some of these problems.

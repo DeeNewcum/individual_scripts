@@ -1,0 +1,7 @@
+wfica seems to be VERY uncooperative with Ubuntu's Unity.
+
+A solution that's worked for me is to use XFCE4:
+
+    sudo apt-get install xubuntu-desktop
+
+Whenever I need to use Citrix, I logout of Unity and log back in using XFCE4:  http://i.stack.imgur.com/tlRhA.png

@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+
+# Sometimes your browser isn't properly configured to respond to the launch.ica as was designed.
+# If you want to leave your browser completely unconfigured, you can use this script instead, to
+# trigger the wfica executable properly.
+# (From a technical standpoint, this script doesn't do much.  What it provides is ease-of-use, so
+#  the user doesn't have to type many commands into the command-line every time they login to Citrix)
+#
+# To use this:
+#       1. Login through the browser
+#       2. Click on the link that downloads a launch.ica file
+#       3. Wait for thel*.ica file to be downloaded
+#       4. Run this script from the command line
+# 
+# This script will automatically find the most recent launch.ica file, and launch it.
+
+    use strict;
+    use warnings;
+
+    use Data::Dumper;
+
+# find the most recent file
+my $latest_file;
+my $latest_file_timestamp = 999;
+my @all_files = glob "$ENV{HOME}/Downloads/launch*.ica";
+foreach my $file (@all_files) {
+    if (-M $file < $latest_file_timestamp) {
+        $latest_file_timestamp = -M $file;
+        $latest_file = $file;
+    }
+}
+
+# delete the old files
+my @others = grep {$_ ne $latest_file && -M $_ > 5 / 1440 } @all_files;
+unlink @others;
+        # print Dumper \@others; exit;
+
+if (!defined($latest_file) || -M $latest_file > 5 / 1440) {
+    print "No new file found.\n";
+    exit;
+}
+
+daemonize();
+open(STDOUT, "> /dev/null")     || die "can't write to /dev/null: $!";
+open(STDERR, ">&STDOUT")        || die "can't dup stdout: $!";
+system "/opt/Citrix/ICAClient/wfica", $latest_file;
+
+#sleep 60;
+#unlink $latest_file;
+
+
+
+# from "perlipc"
+use POSIX "setsid";
+sub daemonize {
+    chdir("/")                      || die "can't chdir to /: $!";
+    #open(STDIN,  "< /dev/null")     || die "can't read /dev/null: $!";
+    #open(STDOUT, "> /dev/null")     || die "can't write to /dev/null: $!";
+    defined(my $pid = fork())       || die "can't fork: $!";
+    exit if $pid;                   # non-zero now means I am the parent
+    (setsid() != -1)                || die "Can't start a new session: $!";
+    #open(STDERR, ">&STDOUT")        || die "can't dup stdout: $!";
+}

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Sometimes the Citrix window is just stuck, and covers up all other windows.
+# This script can be run from Ctrl-Alt-F1, to force the window to minimize.
+
+export DISPLAY=${DISPLAY:-:0}  
+
+xdotool search --class "Wfica" windowminimize %@
+
+if [ $? != 0 ]; then
+    echo Error:  Unable to minimize window.
+fi
