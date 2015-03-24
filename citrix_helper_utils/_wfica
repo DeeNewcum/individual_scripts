@@ -9,7 +9,7 @@
 # To use this:
 #       1. Login through the browser
 #       2. Click on the link that downloads a launch.ica file
-#       3. Wait for thel*.ica file to be downloaded
+#       3. Wait for the launch*.ica file to be downloaded
 #       4. Run this script from the command line
 # 
 # This script will automatically find the most recent launch.ica file, and launch it.
@@ -35,8 +35,11 @@ my @others = grep {$_ ne $latest_file && -M $_ > 5 / 1440 } @all_files;
 unlink @others;
         # print Dumper \@others; exit;
 
-if (!defined($latest_file) || -M $latest_file > 5 / 1440) {
-    print "No new file found.\n";
+if (!defined($latest_file)) {
+    print "No launch.ica file was found.\n";
+    exit;
+} elsif (-M $latest_file > 5 / 1440) {
+    print "No NEW launch.ica file was found.\n";
     exit;
 }
 
