@@ -21,14 +21,26 @@
 
 # find the most recent file
 my $latest_file;
-my $latest_file_timestamp = 999;
-my @all_files = glob "$ENV{HOME}/Downloads/launch*.ica";
-foreach my $file (@all_files) {
-    if (-M $file < $latest_file_timestamp) {
-        $latest_file_timestamp = -M $file;
-        $latest_file = $file;
+my $latest_file_timestamp;
+my @all_files;
+
+my $start_time = $^T;
+do {
+    @all_files = glob "$ENV{HOME}/Downloads/launch*.ica";
+    $latest_file_timestamp = 999;
+    foreach my $file (@all_files) {
+        if (-M $file < $latest_file_timestamp) {
+            $latest_file_timestamp = -M $file;
+            $latest_file = $file;
+        }
     }
-}
+
+    # Display this message only once, and only after we've delayed for 2 seconds.
+    if (time() - $start_time >= 2) {
+        print "I'll launch Citrix as soon as I see a launch.ica file.  Waiting...\n";
+        $start_time = 99999999999;
+    }
+} until ($latest_file_timestamp < 5 / 1440);
 
 # delete the old files
 my @others = grep {$_ ne $latest_file && -M $_ > 5 / 1440 } @all_files;

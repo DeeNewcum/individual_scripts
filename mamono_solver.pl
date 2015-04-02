@@ -18,39 +18,38 @@
 #       #           mines
 my $clues = parse_board(<<'EOF');
     
-     . 2 .
-     3 # #
-     3 # #
-     . 4 .
+    . 1 1 4 .
+    . # # # .
+    . . . . .
 
 EOF
 
-# EDIT THIS.  These are mines we already know about.
+# EDIT THIS.  These are mines we already know about.  If all of them are covered, it should at
+# least match the size from above.
 my $mines = parse_board(<<'EOF');
 
-     . . .
-     . # #
-     . # #
-     . . .
-
+    . . . . .
+    . # # # .
+    . . . . .
 EOF
 
 #!print_board($clues, $mines); exit;
 
 
-my $iter = variations_with_repetition( [0, 1, 2, 3, 4], 4 );
+                                                    ##  vv EDIT THIS -- number of covered cells
+my $iter = variations_with_repetition( [0, 1, 2, 3, 4], 3 );
 while (my $permutation = $iter->next()) {
     #! print join(' ', @$c), "\n";
 
-    ## EDIT THIS, to indicate which cells should be iterated over.  Coordinates are (Y,X).
+    ## EDIT THIS, to indicate where the covered cells are.  Coordinates are (Y,X).
     $mines->[1][1] = shift @$permutation;
     $mines->[1][2] = shift @$permutation;
-    $mines->[2][1] = shift @$permutation;
-    $mines->[2][2] = shift @$permutation;
+    $mines->[1][3] = shift @$permutation;
 
     my $new_clues = calculate_clues($mines);
     if (compare_clues($new_clues, $clues)) {
-        print_board($clues, $mines);
+    #if (compare_clues($new_clues, $new_clues)) {
+        print_board($new_clues, $mines);
     }
 }
 
@@ -133,9 +132,9 @@ sub print_board {
                 #!print STDERR "---- ($x, $y) ----\n";
                 my $m = $mines->[$y][$x];
                 if ($m =~ /^\d+$/) {
-                    print "$reverse$m$reset ";
+                    printf "%s%2s%s ", $reverse, $m, $reset;
                 } else {
-                    print "$clues->[$y][$x] ";
+                    printf "%2s ", $clues->[$y][$x];
                 }
             }
             print "$reset\n";
