@@ -37,7 +37,7 @@ do {
 
     # Display this message only once, and only after we've delayed for 2 seconds.
     if (time() - $start_time >= 2) {
-        print "I'll launch Citrix as soon as I see a launch.ica file.  Waiting...\n";
+        print "Waiting for the launch.ica file to be downloaded...\n";
         $start_time = 99999999999;
     }
 } until ($latest_file_timestamp < 5 / 1440);
