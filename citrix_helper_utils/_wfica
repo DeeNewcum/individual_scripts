@@ -19,6 +19,13 @@
 
     use Data::Dumper;
 
+# is a 'wfica' process already running?
+my @procs = qx(pgrep -x wfica);
+if (@procs) {
+    print "Citrix is already running.  To stop it, paste this into the command line:\n";
+    print "     kill ", join(" ", @procs), "\n";
+}
+
 # find the most recent file
 my $latest_file;
 my $latest_file_timestamp;
