@@ -1,0 +1,126 @@
+#!/usr/bin/perl
+
+# Sql+ is a MUCH nicer alternative to command-line sqlplus.  It's a simple wrapper that makes
+# sure that query results are readable.
+#
+# It has no dependencies other than sqlplus and Perl, so it's trivial to setup.
+
+    use strict;
+    use warnings;
+
+    use IPC::Open2;
+    use List::Util;
+
+$0 = 'sql+';        # hide password from ps
+
+my ($chld_out, $chld_in);
+## Connect STDIN directly to sqlplus, don't route it through us at all.
+## Although this has some small limitations, it simplifies our work greatly:
+##      - we don't have to use asynchronous calls, we can do blocking I/O
+##      - we don't have to use select / interleaved I/O
+##      - we don't have to worry about having to pass on the cooked/raw/cbreak modes
+## The limitations are:
+##      - we can't inject commands, including settings changes
+##      - we can't use Term::ReadLine, ala 'rlwrap'
+$chld_in = '<&STDIN';
+my $pid = open2($chld_out, $chld_in, 'sqlplus', '-M', 'html on', @ARGV);
+
+$|++;       # disable buffering on our OUTPUT
+my $buffer;
+my $accum = '';
+my $is_in_table = 0;
+my $is_preamble = 1;
+while (sysread $chld_out, $buffer, 4096) {       # sysread = disable buffering on our INPUT
+    #print $buffer; next;           ## show the raw HTML
+    #print "$buffer||"; next;       ## show the raw HTML, and show how the chunks are broken up when we receive it
+
+    ## Don't display <html><head>...<body>
+    next if ($is_preamble && $buffer !~ s/^.*<body>\s*//si);
+    #next if ($is_preamble && $buffer !~ s/^.*<\/pre>\s*//si);      # Don't even display the copyright / version info
+    $is_preamble = 0;
+
+    if ($is_in_table) {
+        $accum .= $buffer;
+        if ($accum =~ s/<\/table>(.*)//s) {
+            my $after_table = $1;
+            print_table($accum);
+            print_plaintext($after_table);
+            $accum = '';
+            $is_in_table = 0;
+        }
+    } elsif ($buffer =~ s/^(.*)<table\b/<table/si) {
+        print_plaintext($1);
+        $is_in_table = 1;
+        $accum = $buffer;
+    } else {
+        print_plaintext($buffer);
+    }
+}
+
+
+sub print_plaintext {
+    local $_ = shift @_;
+    s/^\s*<(?:br|p)>\s*$//mi;           # remove extraneous blank lines
+    print html2text($_);
+}
+
+
+sub print_table {
+    my ($html_table) = @_;
+
+    ## parse the table
+    my @rows_out;
+    my @rows_in = ($html_table =~ /<tr\b.*?<\/tr>/sig);
+    foreach my $row_in (@rows_in) {
+        my @row_out;
+        $row_in =~ s/^<tr[^>]*>//s;
+        next if ($row_in =~ /<th\b/i && @rows_out);     # skip duplicated header rows
+        my @cols = ($row_in =~ /<t[dh]\b.*?<\/t[dh]>/sig);
+        foreach my $col (@cols) {
+            $col = trim(html2text($col));
+            $col = ' '      if length($col) == 0;       # $(column) doesn't like fields that are zero-width
+            push @row_out, $col;
+        }
+        push @rows_out, \@row_out;
+    }
+    
+    ## add a separator row below the header
+    splice @rows_out, 1, 0,
+            [ map { '-'x length($_) } @{$rows_out[0]} ];
+    
+    ## display the results to the user
+    my $format = '';
+    for (my $col=0; $col<@{$rows_out[0]}-1; $col++) {     # how wide is each column?
+        $format .= '%-' . List::Util::max( map {length $_->[$col]} @rows_out ) . 's ';
+    }
+    $format .= ' %s';
+    print "\n";
+    my $odd;
+    foreach my $row (@rows_out) {
+        printf "\e[%sm$format\e[0m\n", $odd ? 100 : 0, @$row;
+        $odd = !$odd;
+    }
+}
+
+
+
+# For the below routines, it would be MUCH BETTER to use an existing library to do this, but I want this script to be portable and dependency-free.
+sub html2text {
+    local $_ = shift @_;
+    # remove HTML tags
+    s/<[^>]*>//sg;
+    # unescape HTML entities
+    s/&gt;/>/g;
+    s/&lt;/</g;
+    s/&quot;/"/g;
+    s/&nbsp;/ /g;
+    s/&amp;/&/g;
+    return $_;
+}
+
+sub trim {
+    local $_ = shift @_;
+    s/^[\s\n\r]+//s;
+    s/[\s\n\r]+$//s;
+    return $_;
+}
