@@ -3,13 +3,13 @@
 # Sql+ is a MUCH nicer alternative to command-line sqlplus.  It's a simple wrapper that makes
 # sure that query results are readable.
 #
-# It has no dependencies other than sqlplus and Perl, so it's trivial to setup.
+# It has basically no dependencies (only sqlplus and Perl), so it's trivial to setup.
 
     use strict;
     use warnings;
 
-    use IPC::Open2;
-    use List::Util;
+    use IPC::Open2;     # included with base Perl   (since v5.000)
+    use List::Util;     # included with base Perl   (since v5.7.3)
 
 $0 = 'sql+';        # hide password from ps
 
@@ -22,6 +22,9 @@ my ($chld_out, $chld_in);
 ## The limitations are:
 ##      - we can't inject commands, including settings changes
 ##      - we can't use Term::ReadLine, ala 'rlwrap'
+                # TODO: If we fork() and do the STDOUT filtering in one process, and the
+                #       STDIN filtering in another process, would that allow us to use
+                #       Term::ReadLine?
 $chld_in = '<&STDIN';
 my $pid = open2($chld_out, $chld_in, 'sqlplus', '-M', 'html on', @ARGV);
 
@@ -78,7 +81,7 @@ sub print_table {
         my @cols = ($row_in =~ /<t[dh]\b.*?<\/t[dh]>/sig);
         foreach my $col (@cols) {
             $col = trim(html2text($col));
-            $col = ' '      if length($col) == 0;       # $(column) doesn't like fields that are zero-width
+            $col = ' '      if length($col) == 0;       # column(1) doesn't like fields that are zero-width
             push @row_out, $col;
         }
         push @rows_out, \@row_out;
