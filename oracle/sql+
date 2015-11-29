@@ -5,6 +5,16 @@
 #
 # It has basically no dependencies (only sqlplus and Perl), so it's trivial to setup.
 
+            # TODO:  Currently the output only looks good if the table is narrow enough to fit on
+            #        one screen.  One way to deal with this would be to pass the output to
+            #        `less -S`, allowing the user to interactively scroll left and right.
+            #        We really should detect if a long line is present, and if so, start up less;
+            #        otherwise just display as normal to the terminal.
+            #
+            #        Another possible way would be to improve print_table() so it could wrap
+            #        lines within a single column, like w3m does.  (though this would be only a
+            #        marginal improvement without interactive scrolling)
+
     use strict;
     use warnings;
 
