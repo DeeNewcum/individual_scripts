@@ -1,0 +1,9 @@
+# /home/interiot/oraenv is a standard location across several machines, that allows a script to
+# configure itself to use the local Oracle settings, including Perl DBD::Oracle scripts
+
+
+export ORACLE_HOME=/usr/opt/oracle/Oracle11gCL-11.1
+export PATH=$PATH:$ORACLE_HOME/bin/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib/
+export TNS_ADMIN=/home/interiot/tns_admin/
+export PERL5LIB=$PERL5LIB:$ORACLE_HOME/perl/lib:$ORACLE_HOME/perl/lib/site_perl/
