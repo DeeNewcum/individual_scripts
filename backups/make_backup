@@ -1,10 +1,23 @@
 #!/bin/sh
 
+# Place a *copy* of this script on each server that needs to be backed up.
+# Then edit the EXCLUDES section below, for the particular files on that server.
+#
+# This script should run on Solaris/AIX as well as Linux;  it shouldn't assume a GNU toolset.
+
+
 TODAY=$(date +%Y%m%d)
-#TARBALL=/var/tmp/backup_$(hostname)_$LOGNAME.$TODAY.tgz
-TARBALL=/var/tmp/paperlined.org_$TODAY.tgz
+#TARBALL=/var/tmp/backup_$(hostname)_$LOGNAME.$TODAY.tar
+TARBALL=/var/tmp/paperlined.org_$TODAY.tar
 
 EXCLUDES=$(perl -x "$0" <<'EOF'
+
+    ~/.ssh/known_hosts          # transient cache
+    ~/.cpan/                    # transient cache
+    ~/.cpanm/                   # transient cache
+    ~/.viminfo                  # transient
+    ~/.vim/view/                # transient
+    *.swp                       # litter
 
     ~/public_html/old/                  # anything in here that is valuable should have been moved elsewhere a while ago
     ~/public_html/games/pc/Spelunky/releases/               # big, and I am not interested in it anymore
@@ -24,11 +37,15 @@ EXCLUDES=$(perl -x "$0" <<'EOF'
 EOF
 )
 
-tar -cvzf $TARBALL $EXCLUDES public_html make_backup
+cd $HOME
+tar -cvf $TARBALL $EXCLUDES . | grep -v '/\.git/'
 
 chmod go-rwx $TARBALL
 echo
 ls -l --si $TARBALL
+
+gzip -f $TARBALL
+ls -l --si $TARBALL.gz
 
 # Copy the backup to other boxes.
 if true; then           # Change this to "false" to stop it from copying automatically.
@@ -56,9 +73,9 @@ exit
 
 
 #!perl
-    # A Perl script embedded inside a shell script.
-    # For more info, see 'perlrun' and Ctrl-F for "larger chunk".
-
+    # This is a Perl script embedded inside a shell script.
+    # For more info, Ctrl-F for "larger chunk" here:  http://perldoc.perl.org/perlrun.html
+ 
     # Reads a list of excludes from STDIN, and processes them to be suitable for use by 'tar'.
     # Why add an extra layer here?  Tar's format isn't very readable, which
     # makes it hard to maintain the exclude list.
