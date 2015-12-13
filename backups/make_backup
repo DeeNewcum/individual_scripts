@@ -1,0 +1,89 @@
+#!/bin/sh
+
+TODAY=$(date +%Y%m%d)
+#TARBALL=/var/tmp/backup_$(hostname)_$LOGNAME.$TODAY.tgz
+TARBALL=/var/tmp/paperlined.org_$TODAY.tgz
+
+EXCLUDES=$(perl -x "$0" <<'EOF'
+
+    ~/public_html/old/                  # anything in here that is valuable should have been moved elsewhere a while ago
+    ~/public_html/games/pc/Spelunky/releases/               # big, and I am not interested in it anymore
+    ~/public_html/dev/reference/clearcase_v5.0/bak/         # ??
+    ~/public_html/games/pc/ADOM/ImprovedGuidebook/          # mirror / unimportant
+    ~/public_html/tmp/                  # temporary and not important for the backup
+    ~/public_html/games/pc/Spelunky/releases/spelunky_0_99_5.frozenregion.exe           # big / unnecessary / unimportant
+    ~/public_html/vehicle/bicycle/mp3/4x30_HITT.mp3                                     # big / unnecessary
+    ~/public_html/product_searches/for_motorcycle/CycleWorld_2004.pdf                   # big / unnecessary
+    ~/public_html/dev/oss/high_energy_slings/projectile_rope-end.xcf                    # big / unnecessary
+    ~/public_html/dev/oss/high_energy_slings/exploded_diagram.xcf                       # big / unnecessary
+    ~/public_html/external/mirror/31295019381234.pdf                                    # big / unnecessary
+    ~/public_html/apps/+isms/Learning_Good_Consent/learning_good_consent_screen.pdf     # big / unnecessary
+    ~/public_html/short/OGIFJDOIJAS/DeeNewcum_onboarding_documents.zip                  # big / unnecessary
+    ~/public_html/short/OGIFJDOIJAS/rainymood.mp3                                       # big / unnecessary
+
+EOF
+)
+
+tar -cvzf $TARBALL $EXCLUDES public_html make_backup
+
+chmod go-rwx $TARBALL
+echo
+ls -l --si $TARBALL
+
+# Copy the backup to other boxes.
+if true; then           # Change this to "false" to stop it from copying automatically.
+    echo
+    set -x
+    scp -q $TARBALL.gz myself@server1:backups_exogenous/
+    scp -q $TARBALL.gz myself@server2:backups_exogenous/
+    set +x
+    rm -f /tmp/backup_*_$LOGNAME*.tar.gz
+else
+    echo
+    echo
+    cat <<EOF
+You can run these commands to copy the backup to other boxes:
+
+    scp -q $TARBALL.gz myself@server1:backups_exogenous/
+    scp -q $TARBALL.gz myself@server2:backups_exogenous/
+    rm /tmp/backup_*_$LOGNAME*.tar.gz
+EOF
+fi
+
+exit
+
+
+
+
+#!perl
+    # A Perl script embedded inside a shell script.
+    # For more info, see 'perlrun' and Ctrl-F for "larger chunk".
+
+    # Reads a list of excludes from STDIN, and processes them to be suitable for use by 'tar'.
+    # Why add an extra layer here?  Tar's format isn't very readable, which
+    # makes it hard to maintain the exclude list.
+
+    # Syntax of input data:
+    #       - one path per line
+    #           (and no backslashing is available, which usually makes things simpler, unless you have a newline inside a path name)
+    #       - comments are allowed;  comments are indicated by the hash sign
+    #       - comments can occur anywhere  (they don't have to be on a separate line)
+    #       - unlike with 'tar' inputs, directory specifiers can end with a slash
+    #           (in fact, this is *encouraged*, as it aids readability)
+
+    use strict;
+    use warnings;
+
+my @arguments;
+while (<>) {
+    s/\#.*//;               # remove comments
+    s/^\s+|\s+$//sg;        # ltrim / rtrim
+    next unless /\S/;       # skip blank lines
+    s#^~/##;                # assume all paths are relative to $HOME
+    s#/$##;                 # tar can't handle trailing slashes on directories
+    s/([ '"\(\)])/\\$1/g;   # for characters that could problems on the command line, escape each of them
+    push @arguments, "--exclude=$_";
+}
+
+print join(" ", @arguments), "\n";
+#print STDERR map {"\t$_\n"}  @arguments, "";            # DEBUG only
