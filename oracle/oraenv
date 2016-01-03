@@ -5,5 +5,7 @@
 export ORACLE_HOME=/usr/opt/oracle/Oracle11gCL-11.1
 export PATH=$PATH:$ORACLE_HOME/bin/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib/
+        # Optional.  $TNS_ADMIN is only needed if $ORACLE_HOME/network/admin/tnsnames.ora doesn't
+        # include the server name info you need.
 export TNS_ADMIN=/home/interiot/tns_admin/
 export PERL5LIB=$PERL5LIB:$ORACLE_HOME/perl/lib:$ORACLE_HOME/perl/lib/site_perl/
