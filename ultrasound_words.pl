@@ -105,8 +105,8 @@ while (<IPHOD>) {
 while (<ANC_FREQ>) {
     s/[\n\r]$//;        # chomp, but for DOS-formatted .txt files
     my ($word) = split /\t/, $_;
-    if (exists $words{$word}) {
-        my $phoneme_value = delete $words{$word};
+    if (exists $words{lc $word}) {      # lc() because the ANC dictionary *never* capitalizes words
+        my $phoneme_value = delete $words{lc $word};
         if ($word =~ /[^aeiouy](i?e)?s$/) {
             # Skip plurals.  This is entirely optional, and should be a user configuration.
             # The reason one might want to do this is that there's SO many plurals, and IMHO
