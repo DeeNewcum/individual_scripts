@@ -11,6 +11,19 @@
 # Experimenting more, I found that certain phonemes generate more ultrasonic components than others.
 # These are the fricative phonemes (the "hiss" type sounds), and to a lesser extent the stop phonemes.
 
+
+# Example output:
+#        3.2  specific
+#        3.2  hybridization
+#        3.4  sophisticated
+#        3.1  philosophical
+#        3.2  demonstrations
+#        4.1  hypothesis
+#        5.2  specifications
+#
+# (where the main number indicates how many fricatives, and the decimal indicates the number of
+#  stops)
+
     use strict;
     use warnings;
 
@@ -45,7 +58,6 @@ my $stops = 0.1;
 my %cmu_phoneme_value = (
     ## fricative phonemes
     'F'  => $fricatives,
-    'V'  => $fricatives,
     'TH' => $fricatives,
     'DH' => $fricatives,
     'S'  => $fricatives,
@@ -53,6 +65,7 @@ my %cmu_phoneme_value = (
     'SH' => $fricatives,
     'ZH' => $fricatives,
     'HH' => $fricatives,
+    'V'  => $fricatives / 2,        # this doesn't really do much, does it?
 
     ## stop phonemes
     'P' => $stops,
@@ -87,6 +100,9 @@ while (<ANC_FREQ>) {
     my ($word) = split /\t/, $_;
     if (exists $words{$word}) {
         my $phoneme_value = $words{$word};
+        if ($word =~ /[^aeiouy](i?e)?s$/) {      # skip plurals
+            next;
+        }
         printf "%4.1f  %s\n",  $phoneme_value, $word;
     }
 }
