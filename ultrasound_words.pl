@@ -10,6 +10,14 @@
 #
 # Experimenting more, I found that certain phonemes generate more ultrasonic components than others.
 # These are the fricative phonemes (the "hiss" type sounds), and to a lesser extent the stop phonemes.
+#
+# The goal isn't for my cats/rats to actually understand words or sentences.  Rather, the goal is to
+# train them to recognize a certain word as a command, which to them will be interpretted as a
+# certain pattern of sounds, but that humans can easily reproduce.
+#
+# Because each command (word) would be made up of multiple ultrasonic "beats" strung together, it
+# should be possible to communicate a broader range of commands than when using only a single
+# ultrasonic sound.
 
 
 # Example output:
@@ -22,7 +30,7 @@
 #        5.2  specifications
 #
 # (where the main number indicates how many fricatives, and the decimal indicates the number of
-#  stops)
+#  stops)   (mostly)
 
     use strict;
     use warnings;
@@ -55,6 +63,9 @@ $freq_max =~ s/[\n\r]+$//;
 my %words;
 my $fricatives = 1;
 my $stops = 0.1;
+                # These are iphod.com's own way to code various phonemes.  See the translation key at
+                # http://www.iphod.com/download/CMU_pronunciation_key.pdf
+# How much ultrasound does a specific phoneme produce?
 my %cmu_phoneme_value = (
     ## fricative phonemes
     'F'  => $fricatives,
@@ -65,7 +76,7 @@ my %cmu_phoneme_value = (
     'SH' => $fricatives,
     'ZH' => $fricatives,
     'HH' => $fricatives,
-    'V'  => $fricatives / 2,        # this doesn't really do much, does it?
+    'V'  => $fricatives / 2,        # This doesn't have much ultrasound, does it?
 
     ## stop phonemes
     'P' => $stops,
@@ -100,7 +111,13 @@ while (<ANC_FREQ>) {
     my ($word) = split /\t/, $_;
     if (exists $words{$word}) {
         my $phoneme_value = $words{$word};
-        if ($word =~ /[^aeiouy](i?e)?s$/) {      # skip plurals
+        if ($word =~ /[^aeiouy](i?e)?s$/) {
+            # Skip plurals.  This is entirely optional, and should be a user configuration.
+            # The reason one might want to do this is that there's SO many plurals, and IMHO
+            # they're a little less natural for others (friends who are just introduced to the rats)
+            # to say.
+            #
+            # i.e. It would be nice if visitors could 
             next;
         }
         printf "%4.1f  %s\n",  $phoneme_value, $word;
