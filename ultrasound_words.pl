@@ -66,7 +66,7 @@ my $stops = 0.1;
                 # These are iphod.com's own way to code various phonemes.  See the translation key at
                 # http://www.iphod.com/download/CMU_pronunciation_key.pdf
 # How much ultrasound does a specific phoneme produce?
-my %cmu_phoneme_value = (
+my %iphod_phoneme_value = (
     ## fricative phonemes
     'F'  => $fricatives,
     'TH' => $fricatives,
@@ -88,15 +88,11 @@ my %cmu_phoneme_value = (
 );
 while (<IPHOD>) {
     chomp;
-    my (undef, $word, $cmu_pronounce) = split /\t/, $_;
-
-    #print ">> $_ <<\n";
-    #print Dumper \@fields;
-    #print ">> $word -- $cmu_pronounce <<\n";
+    my (undef, $word, $iphod_pronounce) = split /\t/, $_;
 
     my $phoneme_value = 0;
-    foreach my $cmu_phoneme (split /\./, $cmu_pronounce) {
-        $phoneme_value += $cmu_phoneme_value{$cmu_phoneme} || 0;
+    foreach my $iphod_phoneme (split /\./, $iphod_pronounce) {
+        $phoneme_value += $iphod_phoneme_value{$iphod_phoneme} || 0;
     }
     if ($phoneme_value >= 3) {
         $words{$word} = $phoneme_value;
