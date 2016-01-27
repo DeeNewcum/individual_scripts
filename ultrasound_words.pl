@@ -106,16 +106,21 @@ while (<ANC_FREQ>) {
     s/[\n\r]$//;        # chomp, but for DOS-formatted .txt files
     my ($word) = split /\t/, $_;
     if (exists $words{$word}) {
-        my $phoneme_value = $words{$word};
+        my $phoneme_value = delete $words{$word};
         if ($word =~ /[^aeiouy](i?e)?s$/) {
             # Skip plurals.  This is entirely optional, and should be a user configuration.
             # The reason one might want to do this is that there's SO many plurals, and IMHO
             # they're a little less natural for others (friends who are just introduced to the rats)
             # to say.
-            #
-            # i.e. It would be nice if visitors could 
             next;
         }
         printf "%4.1f  %s\n",  $phoneme_value, $word;
     }
+}
+# Are there any words that weren't in the frequency-dictionary?  Print those too.
+print "-------------------------------\n";
+my @sort = sort {$words{$b} <=> $words{$a}} keys %words;
+foreach my $word (@sort) {
+    my $phoneme_value = $words{$word};
+    printf "%4.1f  %s\n",  $phoneme_value, $word;
 }
