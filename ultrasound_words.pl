@@ -12,11 +12,11 @@
 # These are the fricative phonemes (the "hiss" type sounds), and to a lesser extent the stop phonemes.
 #
 # The goal isn't for my cats/rats to actually understand words or sentences.  Rather, the goal is to
-# train them to recognize a certain word as a command, which to them will be interpretted as a
-# certain pattern of sounds, but that humans can easily reproduce.
+# train them to recognize a certain word as a command. To them, it will be interpretted as a
+# certain pattern of sounds, but it will be a pattern that humans can easily reproduce.
 #
 # Because each command (word) would be made up of multiple ultrasonic "beats" strung together, it
-# should be possible to communicate a broader range of commands than when using only a single
+# will hopefully be possible to communicate a broader range of commands than when using only a single
 # ultrasonic sound.
 
 
@@ -41,8 +41,8 @@
 
 #### pronunciation dictionary
 if (! -e "IPhODv2.0_REALS.zip") {
-    print "IPhODv2.0_REALS.zip not found\n";
-    print "wget http://www.iphod.com/download/IPhODv2.0_REALS.zip\n";
+    print "IPhODv2.0_REALS.zip not found.  Please download it with this command:\n";
+    print "        wget http://www.iphod.com/download/IPhODv2.0_REALS.zip\n";
     exit;
 }
 open IPHOD, "-|", "unzip -p IPhODv2.0_REALS.zip IPhOD2_Words.txt";
@@ -50,8 +50,8 @@ $_ = <IPHOD>;        # discard the header line
 
 #### word-frequency dictionary
 if (!-e "ANC-all-count.zip") {
-    print "ANC-all-count.zip not found.\n";
-    print "wget http://www.anc.org/SecondRelease/data/ANC-all-count.zip\n";
+    print "ANC-all-count.zip not found.  Please download it with this command:\n";
+    print "        wget http://www.anc.org/SecondRelease/data/ANC-all-count.zip\n";
     exit;
 }
 open ANC_FREQ, "-|", "unzip -p ANC-all-count.zip";
