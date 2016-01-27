@@ -18,13 +18,6 @@
     #use Devel::Comments;           # uncomment this during development to enable the ### debugging statements
 
 
-    ## LEFT OFF -- god, the SCOWL database is kind of a pain to use, its words are scattered across
-    #              many files.  Perhaps I can find a better one to use?
-    #                   http://corpus.byu.edu/corpora.asp
-    #                   http://www.wordfrequency.info/purchase.asp
-
-
-
 #### pronunciation dictionary
 if (! -e "IPhODv2.0_REALS.zip") {
     print "IPhODv2.0_REALS.zip not found\n";
@@ -40,37 +33,34 @@ if (!-e "ANC-all-count.zip") {
     print "wget http://www.anc.org/SecondRelease/data/ANC-all-count.zip\n";
     exit;
 }
-if (0) {
-    my $scowl_filename = glob("scowl-*.*.*.tar.gz");
-    if (!$scowl_filename) {
-        print "scowl-*.tar.gz not found.\n";
-        print "please download the latest .tar.gz from http://wordlist.aspell.net/\n";
-        exit;
-    }
-    open SCOWL, '<', $scowl_filename;
-}
+open ANC_FREQ, "-|", "unzip -p ANC-all-count.zip";
+my (undef, undef, undef, $freq_max) = split /\t/, <ANC_FREQ>;
+$freq_max =~ s/[\n\r]+$//;
+                    ### $freq_max
 
 #### filter words that have a good pronunciation
 my %words;
+my $fricatives = 1;
+my $stops = 0.1;
 my %cmu_phoneme_value = (
     ## fricative phonemes
-    'F'  => 3,
-    'V'  => 3,
-    'TH' => 3,
-    'DH' => 3,
-    'S'  => 3,
-    'Z'  => 3,
-    'SH' => 3,
-    'ZH' => 3,
-    'HH' => 3,
+    'F'  => $fricatives,
+    'V'  => $fricatives,
+    'TH' => $fricatives,
+    'DH' => $fricatives,
+    'S'  => $fricatives,
+    'Z'  => $fricatives,
+    'SH' => $fricatives,
+    'ZH' => $fricatives,
+    'HH' => $fricatives,
 
     ## stop phonemes
-    'P' => 1,
-    'B' => 1,
-    'T' => 1,
-    'D' => 1,
-    'K' => 1,
-    'G' => 1,
+    'P' => $stops,
+    'B' => $stops,
+    'T' => $stops,
+    'D' => $stops,
+    'K' => $stops,
+    'G' => $stops,
 );
 while (<IPHOD>) {
     chomp;
@@ -84,7 +74,19 @@ while (<IPHOD>) {
     foreach my $cmu_phoneme (split /\./, $cmu_pronounce) {
         $phoneme_value += $cmu_phoneme_value{$cmu_phoneme} || 0;
     }
-    if ($phoneme_value >= 11) {
-        printf "%2d  %s\n",  $phoneme_value, $word;
+    if ($phoneme_value >= 3) {
+        $words{$word} = $phoneme_value;
+        #printf "%2d  %s\n",  $phoneme_value, $word;
+    }
+}
+
+
+#### sort words by frequency
+while (<ANC_FREQ>) {
+    s/[\n\r]$//;        # chomp, but for DOS-formatted .txt files
+    my ($word) = split /\t/, $_;
+    if (exists $words{$word}) {
+        my $phoneme_value = $words{$word};
+        printf "%4.1f  %s\n",  $phoneme_value, $word;
     }
 }
