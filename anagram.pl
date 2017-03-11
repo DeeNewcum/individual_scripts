@@ -56,6 +56,7 @@ if ($length_upper > $wordlen) {
 print Dumper @regexps;# exit;
 
 while (<STDIN>) {
+    next unless /^[$word]*$/i;
     foreach my $re (@regexps) {
         print if /^$re$/;
     }
