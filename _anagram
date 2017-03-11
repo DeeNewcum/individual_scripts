@@ -1,0 +1,3 @@
+#!/bin/sh
+
+./anagram.pl $1 $2 </usr/share/dict/words | perl -e 'print sort {length($a) <=> length($b) or $a cmp $b} grep {!/[A-Z]/} <>'

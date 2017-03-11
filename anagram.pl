@@ -7,7 +7,7 @@
 
 
 if (@ARGV < 2) {
-    print <<"EOF";
+    print STDERR <<"EOF";
 usage:  $0 word length  < /usr/share/dict/words
 
 <length> can be something like:
@@ -18,7 +18,7 @@ EOF
     exit 1;
 }
 if (-t STDIN) {
-    print <<"EOF";
+    print STDERR <<"EOF";
 Something must be piped in to this, for example:
     $0 word length  < /usr/share/dict/words
 EOF
