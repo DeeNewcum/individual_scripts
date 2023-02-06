@@ -163,10 +163,10 @@ sub search_archive {
             my $text_module = Text::LineNumber->new($contents);
             my $match_line_pos = $text_module->off2lnr($match_byte_pos);
 
-            my $module;
-            #$module = parse_package_name($contents)     if ($filename =~ /\.pm$/);
-            $module = get_Pod_NAME_module__from_string($contents)    if ($filename =~ /\.(?:pm|pod)$/);
-            print_hit($tarball, $module, $filename, $match_line_pos);
+            my $package;
+            #$package = parse_package_name($contents)     if ($filename =~ /\.pm$/);
+            $package = get_Pod_NAME_module__from_string($contents)    if ($filename =~ /\.(?:pm|pod)$/);
+            print_hit($tarball, $package, $filename, $match_line_pos);
         }
     }
 }
@@ -209,7 +209,7 @@ BEGIN {
     ## print a single search result, a single row in the table
     ############################################################
     sub print_hit {
-        my ($tarball, $module, $inside_filename, $line) = @_;
+        my ($tarball, $package, $inside_filename, $line) = @_;
 
         my $author = File::Basename::basename(File::Basename::dirname($tarball));
 
@@ -222,15 +222,15 @@ BEGIN {
 
         $inside_filename =~ s#^[^/]*/##s;
 
-        $module = '-' unless (defined($module) && $module =~ /\S/);
+        $package = '-' unless (defined($package) && $package =~ /\S/);
 
-        printf "%-40s  %-40s  %s\n", $distribution, $module, $inside_filename;
+        printf "%-40s  %-40s  %s\n", $distribution, $package, $inside_filename;
 
         print $html "<tr><td><a href='https://metacpan.org/dist/$distribution'>$distribution</a>\n";
-        if ($module eq '-') {
+        if ($package eq '-') {
             print $html "    <td><a href='https://metacpan.org/release/$author/$distro_with_version/'>-</a>\n";
         } else {
-            print $html "    <td><a href='https://metacpan.org/pod/$module'>$module</a>\n";
+            print $html "    <td><a href='https://metacpan.org/pod/$package'>$package</a>\n";
         }
         print $html "    <td><a href='https://metacpan.org/dist/$distribution/source/$inside_filename#L$line'>$inside_filename</a>\n";
     }
