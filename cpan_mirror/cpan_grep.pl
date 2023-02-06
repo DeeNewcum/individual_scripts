@@ -201,7 +201,7 @@ BEGIN {
         (my $distribution = $tarball) =~ s#.*/##;
         $distribution =~ s/\.(?:tar\.gz|tgz|tar\.bz2)$//;
         my $distro_with_version = $distribution;
-        $distribution =~ s/-[0-9\.]+$//s;
+        $distribution =~ s/-v?[0-9\.]+$//s;
 
         $inside_filename =~ s#^[^/]*/##s;
 
