@@ -5,13 +5,20 @@
 # Designed to work with CPAN::Mini.
 #
 # Searches through .tar.gz'd files, so this takes a lot of CPU and some clock time.  However, it minimizes long-term disk space.
+#
+# To install all prerequisites, you'll probably want to run:
+#
+#       cpanm CGI::Tiny Pod::Parser Text::LineNumber
 
 
 
 # TODO:
 #
-#       # integrate  http://search.cpan.org/perldoc?ppigrep   into this?
-#                or  http://search.cpan.org/perldoc?grepl   ?
+#       - integrate  https://metacpan.org/dist/PPIx-Grep/view/bin/ppigrep   into this?
+#                       or  https://metacpan.org/dist/App-Grepl/view/bin/grepl  ?
+#           - or just do like Perl::Metrics::Simple::Analysis::File does, and 1) parse with PPI, and
+#             2) use PPI to prune all comments, pod, and anything after __END__:
+#                https://github.com/matisse/Perl-Metrics-Simple/blob/3b8ce3f/lib/Perl/Metrics/Simple/Analysis/File.pm#L378-L388
 #
 #       - important -- for domain=unlimited searches, it should DETERMINE IF THE MATCH was in documentation-only or not
 #               - this documentation-only flag should be shown on reports, particularly the HTML report
@@ -19,15 +26,10 @@
 #
 #       - release this to CPAN as CPAN::Mini::Grep   and CPAN::Mini::Grep::HTML
 #
-#       - currently it only focuses on .pm (Perl) files....   add the ability to look at .xs files too
-#
-#               - (personal project) and then look for B::Generate-like signatures...
-#                           newSVrv()
-#                           newRV_noinc()
-#
 #       - add flags to search different domains:
 #               Perl code only, no comments
 #               Perl code only, comments included
+#               POD only (which includes both .pod files, as well as Perl code with POD interspersed)
 #               XS code only
 #               EVERYTHING / unrestricted
 #
@@ -38,27 +40,28 @@
     use strict;
     use warnings;
 
-    use Archive::Tar;
-    use Pod::Parser;
-    use CGI;
-    use Cwd 'abs_path';
-    use File::Basename;
+    use Archive::Tar        ();     # Perl core
+    use CGI::Tiny           ();
+    use File::Basename      ();     # Perl core
+    use Pod::Parser         ();     # Perl core
+    use Text::LineNumber    ();
 
-
-    use Data::Dumper;
-
+    use Data::Dumper;               # Perl core
 
 
     # the location of your CPAN::Mini mirror
-    my $mirror_location = 'mirror/authors/';
+    my $mirror_location = '/home/ubuntu/minicpan/mirror/authors/';
     my $log_location = 'logs/';
 
 
-my $eval_pattern = shift or die "Please specify a Perl snippet of regexp(es), for matching files.\n\nFor example:\n\t$0 '/matches_somethign/ && /matches_something_else/'\n";
+my $eval_pattern = shift or die <<"EOF";
+    Please specify a Perl snippet of regexp(es), for matching files.
+
+    For example:
+        $0 '/matches_something/ && /matches_something_else/'
+EOF
 
 -d $mirror_location or die "\$mirror_location is set incorrectly ($mirror_location)\n";
-
-system "mkdir", "-p", $log_location;
 
 $Archive::Tar::WARN = 0;        # quiet warning messages
 
@@ -66,9 +69,19 @@ my $log_filename = "${log_location}grep." . time();
 tee($log_filename);
 
 print "   Searching for:  $eval_pattern\n";
-print "HTML result file:  $log_filename.html\n\n";
+print "HTML result file:  $log_filename.html\n";
+# see https://github.com/DeeNewcum/dotfiles/blob/master/bin/url
+my $url = `url $log_filename.html 2>/dev/null`;
+if ($url) {
+    $url =~ s#/$##;     # I'm not sure why 'url' does this
+    print "HTML result file:  $url";
+}
+print "\n";
 
 open my $html, '>', "$log_filename.html"        or die $!;
+my $prev_file = select($html);
+$|++;       # enable autoflush
+select($prev_file);
 html_header();
 
 
@@ -78,7 +91,13 @@ open PIN, "-|", "find", $mirror_location, "-type", "f", "-o", "-type", "l"
         or die $!;
 while (<PIN>) {
     chomp;
-    push(@archives, $_)     if (/\.tar\.gz$/i);
+    next if (m#/(?:CHECKSUMS|RECENT)$#);        # these are text files
+    if (/\.(?:tar\.gz|tgz|tar\.bz2)$/i) {
+        push(@archives, $_)     
+    } else {
+        ################## TODO -- we need to be able to process .zip files and .pm.gz files too ##################
+        #warn "Unable to process $_\n";
+    }
 }
 
 # sort by distribution name -- without this, the results end up being sorted by author name
@@ -91,6 +110,9 @@ foreach my $archive (@archives) {
 
 
 
+##################################################################
+## process each tarball / zip file / bzipball in local CPAN mirror
+##################################################################
 sub search_archive {
     my $tarball = shift;
 
@@ -99,6 +121,8 @@ sub search_archive {
     # tarballs that we get hung up on for one reason or another
     return if ($tarball =~ m#/Lingua-StanfordCoreNLP-#);
 
+    # Archive::Tar is able to handle gzip compression and bzip2 compression, and it seems to handle
+    # .zip files too?
     my $tar = Archive::Tar->new($tarball);
 
     foreach my $filename ($tar->list_files()) {
@@ -112,18 +136,20 @@ sub search_archive {
         #$contents = remove_pod($contents);                     
 
         next unless ($contents);
-        my $is_match = 0;
+        my $is_match = -1;
         {
             local $_ = $contents;
-            $is_match = eval $eval_pattern;
-            $@ and die "Error in Perl snippet:   $eval_pattern\n\t$@\n";
+            $is_match = eval "$eval_pattern; return \$-[0]";
         }
         #if ($contents =~ /$pattern/o) {
-        if ($is_match) {
+        if (defined($is_match) && $is_match > 0) {
+            my $text_module = Text::LineNumber->new($contents);
+            my $line_pos = $text_module->off2lnr($is_match);
+
             my $module;
             #$module = parse_package_name($contents)     if ($filename =~ /\.pm$/);
             $module = get_Pod_NAME_module__from_string($contents)    if ($filename =~ /\.(?:pm|pod)$/);
-            print_hit($tarball, $module, $filename);
+            print_hit($tarball, $module, $filename, $line_pos);
         }
     }
 }
@@ -133,6 +159,9 @@ sub filename_filter {
     local $_ = shift;
 
     ### CONFIGURATION:  enable or disable these (currently manually, later via flags)
+
+    # only search .xs files
+    #return (/\.xs$/);
 
     #return unless (/\.pm$/);
     return if (/^META\.yml$|^Meta\.json$|^Build\.PL$|^Makefile\.PL$|^dist.ini$|^Changes$/);
@@ -159,15 +188,18 @@ sub parse_package_name {
 BEGIN {
     our %seen;
 
+    ############################################################
+    ## print a single search result, a single row in the table
+    ############################################################
     sub print_hit {
-        my ($tarball, $module, $inside_filename) = @_;
+        my ($tarball, $module, $inside_filename, $line) = @_;
 
-        my $author = basename(dirname($tarball));
+        my $author = File::Basename::basename(File::Basename::dirname($tarball));
 
         #print Dumper \@_, $author; exit;
 
         (my $distribution = $tarball) =~ s#.*/##;
-        $distribution =~ s/\.tar\.gz$//s;
+        $distribution =~ s/\.(?:tar\.gz|tgz|tar\.bz2)$//;
         my $distro_with_version = $distribution;
         $distribution =~ s/-[0-9\.]+$//s;
 
@@ -177,13 +209,13 @@ BEGIN {
 
         printf "%-40s  %-40s  %s\n", $distribution, $module, $inside_filename;
 
-        print $html "<tr><td><a href='https://metacpan.org/release/$distribution/'>$distribution</a>\n";
+        print $html "<tr><td><a href='https://metacpan.org/dist/$distribution'>$distribution</a>\n";
         if ($module eq '-') {
-            print $html "    <td><a href='https://metacpan.org/source/$author/$distro_with_version/'>-</a>\n";
+            print $html "    <td><a href='https://metacpan.org/release/$author/$distro_with_version/'>-</a>\n";
         } else {
-            print $html "    <td><a href='https://metacpan.org/module/$module'>$module</a>\n";
+            print $html "    <td><a href='https://metacpan.org/pod/$module'>$module</a>\n";
         }
-        print $html "    <td><a href='https://metacpan.org/source/$author/$distro_with_version/$inside_filename'>$inside_filename</a>\n";
+        print $html "    <td><a href='https://metacpan.org/dist/$distribution/source/$inside_filename#L$line'>$inside_filename</a>\n";
     }
 }
 
@@ -273,7 +305,7 @@ sub html_header {
 
 EOF
 
-    print $html "<p><b>Results for:</b> <kbd>", CGI::escapeHTML($eval_pattern), "</kbd>";
+    print $html "<p><b>Results for:</b> <kbd>", CGI::Tiny::escape_html($eval_pattern), "</kbd>";
     print $html "<p><br><table class=wikitable>\n";
 }
 
@@ -332,7 +364,7 @@ BEGIN {
 
 
 
-use Pod::Simple::SimpleTree;
+use Pod::Simple::SimpleTree ();     # Perl core
 
 sub get_Pod_NAME_module__from_string {
     my ($file_contents) = @_;
