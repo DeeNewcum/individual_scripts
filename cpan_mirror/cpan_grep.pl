@@ -157,20 +157,24 @@ sub search_archive {
         #$contents = remove_pod($contents);                     
 
         next unless ($contents);
-        my $is_match = -1;
+        my $is_match;
+        my $match_byte_pos;
         {
             local $_ = $contents;
-            $is_match = eval "$eval_pattern; return \$-[0]";
+            # @- is @LAST_MATCH_START
+            #
+            # I would like to wrap $eval_pattern in a    `do { ... }`, but unfortunately @- only
+            # remains set within the smallest scope.
+            $match_byte_pos = eval "\$is_match = $eval_pattern;   \$-[0]";
         }
-        #if ($contents =~ /$pattern/o) {
-        if (defined($is_match) && $is_match > 0) {
+        if ($is_match) {
             my $text_module = Text::LineNumber->new($contents);
-            my $line_pos = $text_module->off2lnr($is_match);
+            my $match_line_pos = $text_module->off2lnr($match_byte_pos);
 
             my $module;
             #$module = parse_package_name($contents)     if ($filename =~ /\.pm$/);
             $module = get_Pod_NAME_module__from_string($contents)    if ($filename =~ /\.(?:pm|pod)$/);
-            print_hit($tarball, $module, $filename, $line_pos);
+            print_hit($tarball, $module, $filename, $match_line_pos);
         }
     }
 }
