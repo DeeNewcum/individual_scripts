@@ -110,9 +110,9 @@ foreach my $archive (@archives) {
 
 
 
-##################################################################
-## process each tarball / zip file / bzipball in local CPAN mirror
-##################################################################
+############################################################################
+## process one tarball / zip file / bzipball that's in our local CPAN mirror
+############################################################################
 sub search_archive {
     my $tarball = shift;
 
@@ -123,8 +123,27 @@ sub search_archive {
 
     # Archive::Tar is able to handle gzip compression and bzip2 compression, and it seems to handle
     # .zip files too?
-    my $tar = Archive::Tar->new($tarball);
+    
+    # Options that get passed into Archive::Tar->read(). ->new() ends up calling ->read() internally.
+    my %ArchiveTar_read_options = (
+        filter_cb => sub {       # 'filter_cb' isn't really documented right now, and maybe should be considered internal-only
+            my ($entry) = @_;       # an Archive::Tar::File object
 
+            my $entry_filename = $entry->name;
+            local $_ = $entry_filename;
+
+            ################ skip problematic files #############################
+
+            # we get an 'Out of memory!' error when trying to unpack this in-memory
+            return 0 if m#^App-lcpan-Bootstrap-[0-9\.]*/share/db/index\.db\.xz$#;
+
+            return 1;
+        });
+    my $tar = Archive::Tar->new($tarball, undef, \%ArchiveTar_read_options);
+
+    ##################################################################
+    ## process one file within this archive
+    ##################################################################
     foreach my $filename ($tar->list_files()) {
         #next unless (filename_filter($filename));
         (my $filename_sans_package = $filename) =~ s#^[^/]*/##s;
