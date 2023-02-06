@@ -14,6 +14,11 @@
 
 # TODO:
 #
+#       - Extract 1) the distribution's abstract (often inside the META.json file) and 2) the
+#         package's description, gotten from the POD's '=head1 NAME' section. Include these in the
+#         report as well.       https://perldoc.perl.org/perlpodstyle#NAME1
+#         See: get_Pod_NAME_module__from_string()
+#
 #       - integrate  https://metacpan.org/dist/PPIx-Grep/view/bin/ppigrep   into this?
 #                       or  https://metacpan.org/dist/App-Grepl/view/bin/grepl  ?
 #           - or just do like Perl::Metrics::Simple::Analysis::File does, and 1) parse with PPI, and
@@ -86,6 +91,11 @@ $|++;       # enable autoflush
 select($prev_file);
 html_header();
 
+$SIG{INT} = sub {       # make sure the HTML footer is written out when Ctrl-C is pressed
+    html_footer();
+    exit 1;
+};
+
 
 
 my @archives;
@@ -109,6 +119,11 @@ while (<PIN>) {
 foreach my $archive (@archives) {
     search_archive($archive);
 }
+
+html_footer();
+
+exit;
+
 
 
 
@@ -158,6 +173,7 @@ sub search_archive {
             # I would like to wrap $eval_pattern in a    `do { ... }`, but unfortunately @- only
             # remains set within the smallest scope.
             $match_byte_pos = eval "\$is_match = $eval_pattern;   \$-[0]";
+            die $@   if $@;         # report syntax errors, etc. to the user
         }
         if ($is_match) {
             my $text_module = Text::LineNumber->new($contents);
@@ -322,8 +338,22 @@ sub html_header {
 
 EOF
 
-    print $html "<p><b>Results for:</b> <kbd>", CGI::Tiny::escape_html($eval_pattern), "</kbd>";
-    print $html "<p><br><table class=wikitable>\n";
+    print $html "<ul><b>Results for:</b> <kbd>", CGI::Tiny::escape_html($eval_pattern), "</kbd></ul>";
+
+print $html <<'EOF';
+<p><table class=wikitable>
+<tr><th>distribution <th>package <th>file<sup>&dagger;</sup>
+EOF
+}
+
+
+sub html_footer {
+    print $html <<'EOF';
+</table>
+
+<p>&dagger; The line found at the link corresponds to the last regexp specified on the command line
+(if there was more than one).
+EOF
 }
 
 
