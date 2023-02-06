@@ -131,15 +131,7 @@ sub search_archive {
         filter_cb => sub {       # 'filter_cb' isn't really documented right now, and maybe should be considered internal-only
             my ($entry) = @_;       # an Archive::Tar::File object
 
-            my $entry_filename = $entry->name;
-            local $_ = $entry_filename;
-
-            ################ skip problematic files #############################
-
-            # we get an 'Out of memory!' error when trying to unpack this in-memory
-            return 0 if m#^App-lcpan-Bootstrap-[0-9\.]*/share/db/index\.db\.xz$#;
-
-            return 1;
+            return $entry->size <= 1 * 1024 * 1024;      # is file too large to load in-memory?
         });
     my $tar = Archive::Tar->new($tarball, undef, \%ArchiveTar_read_options);
 
