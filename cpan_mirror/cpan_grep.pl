@@ -54,13 +54,15 @@
     my $log_location = 'logs/';
 
 
-my $eval_pattern = shift or die <<"EOF";
+my $usage = <<"EOF";
     Please specify a Perl snippet of regexp(es), for matching files.
 
     For example:
         $0 '/matches_something/ && /matches_something_else/'
 EOF
+$usage =~ s/^    //mg;        # un-indent
 
+my $eval_pattern = shift or die $usage;
 -d $mirror_location or die "\$mirror_location is set incorrectly ($mirror_location)\n";
 
 $Archive::Tar::WARN = 0;        # quiet warning messages
