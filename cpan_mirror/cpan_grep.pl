@@ -79,8 +79,10 @@
 
     BEGIN {
         can_require 'CGI::Tiny',
+                    'JSON::XS',
                     'Pod::Simple::SimpleTree',
-                    'Text::LineNumber';
+                    'Text::LineNumber',
+                    'YAML::XS';
     }
 
     use Data::Dumper;               # Perl core
@@ -124,6 +126,7 @@ select($prev_file);
 html_header();
 
 $SIG{INT} = sub {       # make sure the HTML footer is written out when Ctrl-C is pressed
+    after_last_print_hit();
     html_footer();
     exit 1;
 };
@@ -151,6 +154,8 @@ while (<PIN>) {
 foreach my $archive (@archives) {
     search_archive($archive);
 }
+
+after_last_print_hit();
 
 html_footer();
 
@@ -182,6 +187,25 @@ sub search_archive {
         });
     my $tar = Archive::Tar->new($tarball, undef, \%ArchiveTar_read_options);
 
+    my $distribution_description;
+    foreach my $filename ($tar->list_files()) {
+        next unless ($filename =~ m#^[^/]*/META.(json|yml)$#);
+
+        my $contents = $tar->get_content($filename);
+        if ($1 eq 'yml') {
+            my $yaml = eval { YAML::XS::Load($contents) };
+            if (! $@) {
+                $distribution_description = $yaml->{abstract};
+                last;
+            }
+        } elsif ($1 eq 'json') {
+            my $json = eval { JSON::XS::decode_json($contents) };
+            if (! $@) {
+                $distribution_description = $json->{abstract};
+            }
+        }
+    }
+
     ##################################################################
     ## process one file within this archive
     ##################################################################
@@ -211,10 +235,9 @@ sub search_archive {
             my $text_module = Text::LineNumber->new($contents);
             my $match_line_pos = $text_module->off2lnr($match_byte_pos);
 
-            my $package;
-            #$package = parse_package_name($contents)     if ($filename =~ /\.pm$/);
-            $package = get_Pod_NAME_module__from_string($contents)    if ($filename =~ /\.(?:pm|pod)$/);
-            print_hit($tarball, $package, $filename, $match_line_pos);
+            my ($package, $package_description) = get_Pod_NAME_module__from_string($contents);
+            print_hit($tarball, $package, $filename, $match_line_pos,
+                        $distribution_description, $package_description);
         }
     }
 }
@@ -253,11 +276,16 @@ sub parse_package_name {
 BEGIN {
     our %seen;
 
+    my $last_distribution = '';
+    my $last_distribution_description;
+    my $last_package = '';
+    my $last_package_description;
+
     ############################################################
     ## print a single search result, a single row in the table
     ############################################################
     sub print_hit {
-        my ($tarball, $package, $inside_filename, $line) = @_;
+        my ($tarball, $package, $inside_filename, $line, $distribution_description, $package_description) = @_;
 
         my $author = File::Basename::basename(File::Basename::dirname($tarball));
 
@@ -272,6 +300,8 @@ BEGIN {
 
         $package = '-' unless (defined($package) && $package =~ /\S/);
 
+        after_last_print_hit($distribution, $distribution_description, $package, $package_description);
+
         printf "%-40s  %-40s  %s\n", $distribution, $package, $inside_filename;
 
         print $html "<tr><td><a href='https://metacpan.org/dist/$distribution'>$distribution</a>\n";
@@ -281,6 +311,34 @@ BEGIN {
             print $html "    <td><a href='https://metacpan.org/pod/$package'>$package</a>\n";
         }
         print $html "    <td><a href='https://metacpan.org/dist/$distribution/source/$inside_filename#L$line'>$inside_filename</a>\n";
+
+    }
+
+
+    # this should be called right after the very last print_hit() is called
+    sub after_last_print_hit {
+        # These parameters should ONLY be used when called from print_hit(), otherwise they should
+        # be left blank.
+        my $distribution = shift // '';
+        my $distribution_description = shift // '';
+        my $package = shift // '';
+        my $package_description = shift // '';
+
+        if ($last_distribution && $last_distribution ne $distribution) {
+            print $html "<tr><td colspan=3 class='description'>$last_distribution &mdash; ",
+                CGI::Tiny::escape_html($last_distribution_description),
+                "\n"        if ($last_distribution_description);
+        }
+        if ($last_package && "$last_distribution/$last_package" ne "$distribution/$package") {
+            print $html "<tr><td colspan=3 class='description'>$last_package &mdash; ",
+                CGI::Tiny::escape_html($last_package_description),
+                "\n"        if ($last_package_description);
+        }
+
+        $last_distribution = $distribution;
+        $last_distribution_description = $distribution_description;
+        $last_package = $package;
+        $last_package_description = $package_description;
     }
 }
 
@@ -339,6 +397,8 @@ sub remove_pod {
 sub html_header {
     print $html <<'EOF';
 <style>
+    table tr td.description {padding-left:3em; color:#aaa}
+
     /* --==##  links aren't underlined unless you :hover  ##==-- */
     a:hover {text-decoration:underline}
     a {text-decoration:none}
@@ -443,6 +503,8 @@ BEGIN {
 
 
 
+# If there's POD documentation inside a Perl script, look for the line '=head1 NAME', and then
+# return its contents.
 sub get_Pod_NAME_module__from_string {
     my ($file_contents) = @_;
 
@@ -457,9 +519,10 @@ sub get_Pod_NAME_module__from_string {
             next;
         }
         if ($return_next_one && $token->[0] eq 'Para') {
-            my $NAME_section = $token->[2];
-            if ($NAME_section =~ /^(\S+)\s+-\s+/s) {
-                return $1;
+            my ($NAME_package, $NAME_description) = split /\s+-\s+/, $token->[2], 2;
+            if (defined($NAME_package)) {
+                return ($NAME_package, $NAME_description)   if (wantarray);
+                return $NAME_package;
             }
             return undef;
         }
