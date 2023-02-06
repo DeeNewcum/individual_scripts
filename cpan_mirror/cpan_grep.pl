@@ -45,11 +45,43 @@
     use strict;
     use warnings;
 
-    use Archive::Tar        ();     # Perl core
-    use CGI::Tiny           ();
-    use File::Basename      ();     # Perl core
-    use Pod::Parser         ();     # Perl core
-    use Text::LineNumber    ();
+    use 5.10.0;     # the defined-or operator is pretty handy
+
+    use Archive::Tar        ();     # Perl core as of v5.9.3
+    use File::Basename      ();     # Perl core as of v5.000
+    use Pod::Parser         ();     # Perl core as of v5.6.0
+
+    # Tries to 'require' the specified list of modules, and provide a
+    # user-friendly error if any aren't found.
+    sub can_require {
+        my @modules_requested = @_;
+
+        my @modules_not_found;
+        foreach my $module (@modules_requested) {
+            eval "require $module";
+            if ($@) {
+                if ($@ =~ /^Can't locate /s) {
+                    push @modules_not_found, $module;
+                } else {
+                    warn $@;
+                    exit 1;
+                }
+            }
+        }
+
+        # show the full list of modules not installed, at the end
+        if (@modules_not_found) {
+            print STDERR "The following module(s) are required but not installed:\n";
+            print STDERR "\t", join(" ", @modules_not_found), "\n";
+            exit 1;
+        }
+    }
+
+    BEGIN {
+        can_require 'CGI::Tiny',
+                    'Pod::Simple::SimpleTree',
+                    'Text::LineNumber';
+    }
 
     use Data::Dumper;               # Perl core
 
@@ -410,8 +442,6 @@ BEGIN {
 # }
 
 
-
-use Pod::Simple::SimpleTree ();     # Perl core
 
 sub get_Pod_NAME_module__from_string {
     my ($file_contents) = @_;
