@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+
+    use strict;
+    use warnings;
+
+    use Cwd;
+    use Term::ANSIColor;
+
+    use Data::Dumper;
+
+
+if (! $ENV{SPLUNK_HOME}) {
+    $ENV{SPLUNK_HOME} = '/opt/splunkforwarder';
+}
+
+## Do some preliminary checks.
+if (! -d $ENV{SPLUNK_HOME} || ! -e "$ENV{SPLUNK_HOME}/etc/splunk.version") {
+    die "Splunk Universal Forwarder is not installed.\n";
+}
+
+
+my $logfile = "$ENV{SPLUNK_HOME}/var/log/splunk/health.log";
+if (! -r $logfile) {
+    if ($< != 0) {
+        #die "Try running this as sudo.\n";
+        
+        # sudo ourselves automatically
+        #print "Automatically sudo'ing ourselves.\n";
+        exec "sudo", "--", Cwd::abs_path($0), @ARGV;
+        #print Dumper [ "sudo", "--", Cwd::abs_path($0), @ARGV ];   exit;
+    }
+    die "Can't read $logfile\n";
+}
+
+
+
+open my $fh, '<', "$ENV{SPLUNK_HOME}/etc/splunk.version"
+    or die $!;
+while (<$fh>) {
+    chomp;
+    if (s/^VERSION=//) {
+        print "Splunk Universal Forwarder version -- $_\n\n";
+    }
+}
+close $fh;
+
+
+open $fh, '-|', 'tail', '-20', $logfile
+    or die "Unable to open $logfile: $!";
+
+my @lines = map {chomp; $_}
+                <$fh>;
+
+#print Dumper \@lines;
+
+close $fh;
+
+
+
+system qq[ tail -10000 $ENV{SPLUNK_HOME}/var/log/splunk/metrics.log ] .
+       q[    | perl -nle 'print "$1   transmitted to Indexer via TCP = $2 KB" if /^(.*) INFO  .* group=tcpout_connections, .* kb="?([^", ]*)"?/' ] .
+       q[    | tail -15 ];
+
+print "\n";
+
+
+
+
+(my $last_timestamp = $lines[-1])
+    =~ s/\.\d\d\d .*//;
+print "======== status as of $last_timestamp ========\n";
+$last_timestamp =~ s/:\d\d$//;
+
+@lines = grep /^\Q$last_timestamp\E/, @lines;
+#print Dumper \@lines;
+
+foreach my $line (@lines) {
+    $line =~ s/^.*(PeriodicHealthReporter|HealthChangeReporter) - //;
+    if ($line =~ s/^(?:feature|product)="([^"]*)" color=(\S+) //) {
+        my ($feature, $color) = ($1, $2);
+        $color = substr("$color    ", 0, 6);
+        printf "%-27s  %s  ", $feature, colored([$color], $color);
+    }
+    $line =~ s/\b(due_to_stanza|due_to_sub_feature|due_to_indicator)="[^"]*" //g;
+    $line =~ s/ node_path=\S+//;
+    $line =~ s/^node_type=\S+| node_type=\S+//;
+    print colored(['blue'], $line);
+    print "\n";
+}
