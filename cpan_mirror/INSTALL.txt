@@ -1,0 +1,12 @@
+Before running, you should install these.
+
+If running on Cygwin, install these packages:
+
+    - libcrypt-devel
+
+
+Finally, install all the Perl packages:
+
+    cpan CPAN::Mini MetaCPAN::Client Number::Bytes::Human CGI::Tiny JSON::XS Text::LineNumber YAML::XS
+
+    (on Cygwin, you may need to "Run as administrator" to the terminal first)

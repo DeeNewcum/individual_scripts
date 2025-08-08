@@ -2,8 +2,14 @@
 
 # This drops a mirror in the same directory that this script is located in.
 
-THIS_DIR=$( dirname $( readlink -f "$0" ) )
+#THIS_DIR=$( dirname $( readlink -f "$0" ) )
+THIS_DIR=$( dirname "$0" )
 
 mkdir -p "$THIS_DIR/mirror"
+
+
+# TODO: LWP::UserAgent::Patch::FilterMirrorMaxSize looks useful, however it refuses to monkey-patch
+#       LWP because this patch hasn't been updated since 2015. Reviving it could possibly save a lot
+#       of disk space.
 
 minicpan -l "$THIS_DIR/mirror/"
